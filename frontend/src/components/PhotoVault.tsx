@@ -8,7 +8,7 @@ import { Photo, PhotoStatus } from '@glacier-photo-vault/shared';
 import { DADSColors, DADSSpacing, DADSRadius, DADSShadow, getStatusColor } from '../design-system/tokens';
 import '../design-system/global.css';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 interface PhotoVaultProps {
   userId: string;
