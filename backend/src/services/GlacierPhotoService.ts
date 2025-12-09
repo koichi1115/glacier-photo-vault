@@ -24,6 +24,13 @@ export class GlacierPhotoService {
   private photos: Map<string, Photo>; // In-memory storage for demo (use DB in production)
 
   constructor() {
+    // Debug: Check if environment variables are loaded
+    console.log('🔍 AWS Configuration Check:');
+    console.log('AWS_REGION:', process.env.AWS_REGION);
+    console.log('AWS_ACCESS_KEY_ID length:', process.env.AWS_ACCESS_KEY_ID?.length || 0);
+    console.log('AWS_SECRET_ACCESS_KEY length:', process.env.AWS_SECRET_ACCESS_KEY?.length || 0);
+    console.log('S3_BUCKET_NAME:', process.env.S3_BUCKET_NAME);
+
     this.s3Client = new S3Client({
       region: process.env.AWS_REGION || 'us-east-1',
       credentials: {
