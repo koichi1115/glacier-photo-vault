@@ -1,12 +1,10 @@
 /**
  * PhotoVault Component
- * デジタル庁デザインシステム（DADS）準拠
+ * デジタル庁デザインシステム（DADS）準拠 - Tailwind CSS版
  */
 
 import React, { useState, useEffect } from 'react';
 import { Photo, PhotoStatus } from '@glacier-photo-vault/shared';
-import { DADSColors, DADSSpacing, DADSRadius, DADSShadow, getStatusColor } from '../design-system/tokens';
-import '../design-system/global.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
@@ -165,141 +163,112 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
     return labels[status] || status;
   };
 
+  const getStatusColor = (status: PhotoStatus): string => {
+    const colors: Record<PhotoStatus, string> = {
+      [PhotoStatus.UPLOADING]: 'bg-blue-100 text-blue-700 border-blue-200',
+      [PhotoStatus.ARCHIVED]: 'bg-gray-100 text-gray-700 border-gray-200',
+      [PhotoStatus.RESTORE_REQUESTED]: 'bg-orange-100 text-orange-700 border-orange-200',
+      [PhotoStatus.RESTORING]: 'bg-orange-100 text-orange-700 border-orange-200',
+      [PhotoStatus.RESTORED]: 'bg-green-100 text-green-700 border-green-200',
+      [PhotoStatus.FAILED]: 'bg-red-100 text-red-700 border-red-200',
+    };
+    return colors[status] || 'bg-gray-100 text-gray-700 border-gray-200';
+  };
+
   const StatusBadge: React.FC<{ status: PhotoStatus }> = ({ status }) => (
     <span
-      className="dads-status-badge"
-      style={{
-        backgroundColor: `${getStatusColor(status)}15`,
-        color: getStatusColor(status),
-      }}
+      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(status)}`}
       aria-label={`ステータス: ${getStatusLabel(status)}`}
     >
-      <span
-        style={{
-          display: 'inline-block',
-          width: '8px',
-          height: '8px',
-          borderRadius: '50%',
-          backgroundColor: getStatusColor(status),
-        }}
-        aria-hidden="true"
-      />
+      <span className="inline-block w-2 h-2 rounded-full bg-current" aria-hidden="true" />
       {getStatusLabel(status)}
     </span>
   );
 
   return (
-    <div style={{ padding: DADSSpacing.lg, maxWidth: '1200px', margin: '0 auto' }}>
-      <h1 className="dads-title-1" style={{ marginBottom: DADSSpacing.lg }}>
+    <div className="p-6 md:p-8 max-w-7xl mx-auto bg-gray-50 min-h-screen">
+      <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8">
         写真保管庫
       </h1>
 
       {/* Stats */}
       {stats && (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: DADSSpacing.md,
-            marginBottom: DADSSpacing.xl,
-          }}
-        >
-          <div className="dads-card">
-            <div className="dads-small" style={{ color: DADSColors.textSecondary, marginBottom: DADSSpacing.xxs }}>
-              総写真数
-            </div>
-            <div className="dads-title-2">{stats.totalPhotos}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+            <div className="text-sm text-gray-600 mb-1">総写真数</div>
+            <div className="text-2xl font-bold text-gray-900">{stats.totalPhotos}</div>
           </div>
-          <div className="dads-card">
-            <div className="dads-small" style={{ color: DADSColors.textSecondary, marginBottom: DADSSpacing.xxs }}>
-              総容量
-            </div>
-            <div className="dads-title-2">{formatBytes(stats.totalSize)}</div>
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+            <div className="text-sm text-gray-600 mb-1">総容量</div>
+            <div className="text-2xl font-bold text-gray-900">{formatBytes(stats.totalSize)}</div>
           </div>
-          <div className="dads-card">
-            <div className="dads-small" style={{ color: DADSColors.textSecondary, marginBottom: DADSSpacing.xxs }}>
-              アーカイブ済み
-            </div>
-            <div className="dads-title-2">{stats.archived}</div>
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+            <div className="text-sm text-gray-600 mb-1">アーカイブ済み</div>
+            <div className="text-2xl font-bold text-gray-900">{stats.archived}</div>
           </div>
-          <div className="dads-card">
-            <div className="dads-small" style={{ color: DADSColors.textSecondary, marginBottom: DADSSpacing.xxs }}>
-              復元可能
-            </div>
-            <div className="dads-title-2">{stats.restored}</div>
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+            <div className="text-sm text-gray-600 mb-1">復元可能</div>
+            <div className="text-2xl font-bold text-gray-900">{stats.restored}</div>
           </div>
         </div>
       )}
 
       {/* Upload Form */}
-      <div className="dads-card" style={{ marginBottom: DADSSpacing.xl }}>
-        <h2 className="dads-title-3" style={{ marginBottom: DADSSpacing.md }}>
-          📤 写真をアップロード
+      <div className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-200">
+        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <span>📤</span> 写真をアップロード
         </h2>
 
         <input
           type="file"
           accept="image/*"
           onChange={handleFileSelect}
-          style={{ marginBottom: DADSSpacing.sm, display: 'block' }}
+          className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2 mb-4"
           aria-label="写真ファイルを選択"
         />
 
         {selectedFile && (
-          <div style={{ marginTop: DADSSpacing.md }}>
+          <div className="space-y-4">
             <input
               type="text"
-              className="dads-input"
               placeholder="タイトル（オプション）"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              style={{ marginBottom: DADSSpacing.sm }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               aria-label="写真のタイトル"
             />
             <textarea
-              className="dads-input"
               placeholder="説明（オプション）"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              style={{
-                marginBottom: DADSSpacing.sm,
-                minHeight: '80px',
-                resize: 'vertical',
-              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[80px] resize-y"
               aria-label="写真の説明"
             />
             <input
               type="text"
-              className="dads-input"
               placeholder="タグ（カンマ区切り、例: 旅行,風景）"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              style={{ marginBottom: DADSSpacing.md }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               aria-label="写真のタグ"
             />
             <button
               onClick={handleUpload}
               disabled={uploading}
-              className="dads-button-primary"
-              style={{ width: '100%' }}
+              className="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors min-h-[44px]"
               aria-busy={uploading}
             >
               {uploading ? 'アップロード中...' : 'Glacier Deep Archiveにアップロード'}
             </button>
             <div
-              className="dads-caption"
-              style={{
-                marginTop: DADSSpacing.sm,
-                padding: DADSSpacing.sm,
-                backgroundColor: `${DADSColors.info}10`,
-                borderRadius: DADSRadius.medium,
-                borderLeft: `4px solid ${DADSColors.info}`,
-              }}
+              className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded"
               role="note"
             >
-              <strong>ℹ️ ご注意：</strong>
-              アップロード後、写真は超低コストのGlacier Deep Archiveに保管されます。
-              取り出しには12-48時間かかります（取り出し時のみ課金）。
+              <p className="text-sm text-blue-900">
+                <strong className="font-semibold">ℹ️ ご注意：</strong>
+                アップロード後、写真は超低コストのGlacier Deep Archiveに保管されます。
+                取り出しには12-48時間かかります（取り出し時のみ課金）。
+              </p>
             </div>
           </div>
         )}
@@ -307,94 +276,72 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
       {/* Photo List */}
       <div>
-        <h2 className="dads-title-3" style={{ marginBottom: DADSSpacing.md }}>
-          🖼️ 保管中の写真
+        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <span>🖼️</span> 保管中の写真
         </h2>
 
         {loading ? (
-          <div className="dads-body" style={{ padding: DADSSpacing.xl, textAlign: 'center' }}>
+          <div className="text-center py-12 text-gray-600">
             読み込み中...
           </div>
         ) : photos.length === 0 ? (
-          <div
-            className="dads-card"
-            style={{
-              padding: DADSSpacing.xxl,
-              textAlign: 'center',
-              color: DADSColors.textSecondary,
-            }}
-          >
-            <div style={{ fontSize: '48px', marginBottom: DADSSpacing.md }}>📸</div>
-            <div className="dads-title-3" style={{ marginBottom: DADSSpacing.xs }}>
+          <div className="bg-white rounded-lg shadow-sm p-12 text-center border border-gray-200">
+            <div className="text-6xl mb-4">📸</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
               写真がまだありません
-            </div>
-            <div className="dads-caption">上のフォームから写真をアップロードしてください</div>
+            </h3>
+            <p className="text-gray-600">上のフォームから写真をアップロードしてください</p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gap: DADSSpacing.md }}>
+          <div className="space-y-4">
             {photos.map((photo) => (
-              <div key={photo.id} className="dads-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: DADSSpacing.sm }}>
-                  <div style={{ flex: 1 }}>
-                    <h3 className="dads-title-3" style={{ marginBottom: DADSSpacing.xxs }}>
+              <div key={photo.id} className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">
                       {photo.title || photo.originalName}
                     </h3>
                     {photo.description && (
-                      <p className="dads-caption" style={{ marginBottom: DADSSpacing.xs }}>
+                      <p className="text-sm text-gray-600 mb-2">
                         {photo.description}
                       </p>
                     )}
-                    <div className="dads-small" style={{ color: DADSColors.textSecondary }}>
-                      📄 {formatBytes(photo.size)} • 📅 {new Date(photo.uploadedAt).toLocaleDateString('ja-JP')}
+                    <div className="text-sm text-gray-500 flex items-center gap-3">
+                      <span>📄 {formatBytes(photo.size)}</span>
+                      <span>•</span>
+                      <span>📅 {new Date(photo.uploadedAt).toLocaleDateString('ja-JP')}</span>
                     </div>
                   </div>
                   <StatusBadge status={photo.status} />
                 </div>
 
                 {photo.tags.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: DADSSpacing.xs, marginBottom: DADSSpacing.sm }}>
+                  <div className="flex flex-wrap gap-2 mb-4">
                     {photo.tags.map((tag, idx) => (
                       <span
                         key={idx}
-                        className="dads-small"
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: `${DADSSpacing.xxs} ${DADSSpacing.sm}`,
-                          backgroundColor: `${DADSColors.primary}10`,
-                          color: DADSColors.primary,
-                          borderRadius: DADSRadius.large,
-                        }}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full"
                       >
-                        🏷️ {tag}
+                        <span>🏷️</span> {tag}
                       </span>
                     ))}
                   </div>
                 )}
 
-                <div
-                  style={{
-                    borderTop: `1px solid ${DADSColors.divider}`,
-                    paddingTop: DADSSpacing.md,
-                    marginTop: DADSSpacing.sm,
-                  }}
-                >
-                  <div style={{ display: 'flex', gap: DADSSpacing.sm, flexWrap: 'wrap' }}>
+                <div className="border-t border-gray-200 pt-4">
+                  <div className="flex flex-wrap gap-3">
                     {photo.status === PhotoStatus.ARCHIVED && (
                       <>
                         <button
                           onClick={() => handleRestore(photo.id, 'Standard')}
-                          className="dads-button-primary"
-                          style={{ flex: 1, minWidth: '150px' }}
+                          className="flex-1 min-w-[150px] bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                           aria-label="Standard復元（12時間）"
                         >
                           復元 (12時間)
                         </button>
                         <button
                           onClick={() => handleRestore(photo.id, 'Bulk')}
-                          className="dads-button-secondary"
-                          style={{ flex: 1, minWidth: '180px' }}
+                          className="flex-1 min-w-[180px] bg-white text-blue-600 font-semibold py-2 px-4 rounded-lg border-2 border-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                           aria-label="Bulk復元（48時間・低コスト）"
                         >
                           復元 (48時間・低コスト)
@@ -405,8 +352,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
                       photo.status === PhotoStatus.RESTORE_REQUESTED) && (
                       <button
                         onClick={() => checkRestoreStatus(photo.id)}
-                        className="dads-button-secondary"
-                        style={{ flex: 1 }}
+                        className="flex-1 bg-white text-blue-600 font-semibold py-2 px-4 rounded-lg border-2 border-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                         aria-label="復元状態を確認"
                       >
                         状態確認
@@ -416,20 +362,14 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
                       <>
                         <button
                           onClick={() => handleDownload(photo.id)}
-                          className="dads-button-primary"
-                          style={{ flex: 1 }}
+                          className="flex-1 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                           aria-label="写真をダウンロード"
                         >
                           ダウンロード
                         </button>
                         {photo.restoredUntil && (
                           <span
-                            className="dads-small"
-                            style={{
-                              color: DADSColors.warning,
-                              alignSelf: 'center',
-                              whiteSpace: 'nowrap',
-                            }}
+                            className="flex items-center px-4 py-2 text-sm text-orange-700 font-medium whitespace-nowrap"
                             aria-label={`利用期限: ${new Date(photo.restoredUntil).toLocaleDateString('ja-JP')}`}
                           >
                             ⏰ {new Date(photo.restoredUntil).toLocaleDateString('ja-JP')}まで
