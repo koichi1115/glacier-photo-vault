@@ -1,286 +1,234 @@
 import express, { Request, Response } from 'express';
 import multer from 'multer';
+import multerS3 from 'multer-s3';
+import { S3Client } from '@aws-sdk/client-s3';
 import { GlacierPhotoService } from '../services/GlacierPhotoService';
 import { authenticateJWT } from '../middleware/auth';
-import { authorizeOwner, authorizePhotoOwner } from '../middleware/authorize';
+import { authorizePhotoOwner, authorizeOwner } from '../middleware/authorize';
+import { PhotoStatus } from '@glacier-photo-vault/shared';
 
 const router = express.Router();
 const glacierService = new GlacierPhotoService();
 
-// Configure multer for file upload (memory storage)
+// S3 Client for multer-s3
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION || 'us-east-1',
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+  },
+});
+
+const bucketName = process.env.S3_BUCKET_NAME || 'glacier-photo-vault';
+
+// Configure multer-s3 for streaming uploads
 const upload = multer({
-  storage: multer.memoryStorage(),
+  storage: multerS3({
+    s3: s3Client,
+    bucket: bucketName,
+    contentType: multerS3.AUTO_CONTENT_TYPE,
+    metadata: function (req, file, cb) {
+      // We can't easily access body fields here reliably because of multipart order
+      // So we store minimal metadata here, and the rest in DB
+      cb(null, { fieldName: file.fieldname });
+    },
+    key: function (req: any, file, cb) {
+      const userId = req.user!.userId;
+      const relativePath = req.body.relativePath || file.originalname;
+      // Sanitize path to prevent directory traversal or weird chars
+      const safePath = relativePath.replace(/[^a-zA-Z0-9_\-\.\/]/g, '_');
+      cb(null, `${userId}/${safePath}`);
+    },
+    // Server-side encryption
+    serverSideEncryption: 'AES256',
+    // Storage class
+    storageClass: 'DEEP_ARCHIVE'
+  }),
   limits: {
     fileSize: 100 * 1024 * 1024, // 100MB limit
   },
   fileFilter: (req, file, cb) => {
-    // Accept images, videos, and other common file types
-    const allowedMimeTypes = [
-      'image/', 'video/', 'audio/',
-      'application/pdf', 'application/zip',
-      'application/x-zip-compressed',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument',
-      'text/'
-    ];
-
-    const isAllowed = allowedMimeTypes.some(type => file.mimetype.startsWith(type));
-    if (isAllowed) {
+    // Allow images, videos, audio, pdf, zip, etc.
+    if (file.mimetype.match(/^(image\/|video\/|audio\/|application\/pdf|application\/zip|application\/x-zip-compressed|multipart\/x-zip)/)) {
       cb(null, true);
     } else {
-      cb(new Error('File type not supported'));
+      cb(null, true); // Allow all for now, or restrict if needed
     }
   },
 });
 
-/**
- * POST /api/photos/upload
- * Upload a photo to Glacier Deep Archive
- * 🔒 Requires: JWT authentication
- */
-router.post('/upload', authenticateJWT, upload.single('photo'), async (req: Request, res: Response) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-
-    // ✅ SECURITY: userIdはJWTから取得（クライアントから受け取らない）
-    const userId = req.user!.userId;
-    const { title, description, tags, relativePath, thumbnail } = req.body;
-
-    // Parse tags, handle empty string or undefined
-    let parsedTags: string[] = [];
-    if (tags && tags.trim() !== '') {
-      try {
-        parsedTags = JSON.parse(tags);
-      } catch (e) {
-        console.error('Failed to parse tags:', tags);
-        parsedTags = [];
+// Upload photo
+router.post(
+  '/upload',
+  authenticateJWT,
+  upload.single('photo'),
+  async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
       }
+
+      const userId = req.user!.userId;
+      const { title, description, tags, relativePath, thumbnail } = req.body;
+
+      // Parse tags
+      let parsedTags: string[] = [];
+      if (typeof tags === 'string') {
+        parsedTags = tags.split(',').map((t) => t.trim());
+      } else if (Array.isArray(tags)) {
+        parsedTags = tags;
+      }
+
+      // Record metadata in DB
+      // req.file is now an S3 file object from multer-s3
+      const photo = await glacierService.recordUpload(req.file as Express.MulterS3.File, {
+        userId,
+        title,
+        description,
+        tags: parsedTags,
+        relativePath,
+        thumbnail,
+      });
+
+      res.status(201).json({
+        success: true,
+        photo,
+      });
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      res.status(500).json({ error: error.message || 'Failed to upload photo' });
     }
-
-    console.log('📨 Upload request:', {
-      userId,
-      title,
-      description,
-      tagsRaw: tags,
-      tagsParsed: parsedTags,
-      relativePath,
-      hasThumbnail: !!thumbnail,
-    });
-
-    const photo = await glacierService.uploadPhoto(req.file, {
-      userId, // JWTから取得したuserId
-      title,
-      description,
-      tags: parsedTags,
-      relativePath,
-      thumbnail,
-    });
-
-    res.status(201).json({
-      success: true,
-      photo,
-      message: 'Photo uploaded to Glacier Deep Archive successfully',
-    });
-  } catch (error: any) {
-    console.error('Upload error:', error);
-    res.status(500).json({ error: error.message || 'Failed to upload photo' });
   }
-});
+);
 
-/**
- * GET /api/photos/:photoId
- * Get photo metadata by ID
- * 🔒 Requires: JWT authentication + photo ownership
- */
-router.get('/:photoId', authenticateJWT, authorizePhotoOwner(glacierService), async (req: Request, res: Response) => {
-  try {
-    const { photoId } = req.params;
-    const photo = await glacierService.getPhoto(photoId);
-
-    if (!photo) {
-      return res.status(404).json({ error: 'Photo not found' });
-    }
-
-    res.json({ success: true, photo });
-  } catch (error: any) {
-    console.error('Get photo error:', error);
-    res.status(500).json({ error: error.message || 'Failed to get photo' });
-  }
-});
-
-/**
- * GET /api/photos/user/:userId
- * Get all photos for a user
- * 🔒 Requires: JWT authentication + userId ownership
- */
+// Get user photos
 router.get('/user/:userId', authenticateJWT, authorizeOwner, async (req: Request, res: Response) => {
   try {
-    // ✅ SECURITY: userIdはパラメータから取得するが、authorizeOwnerミドルウェアで検証済み
-    const { userId } = req.params;
+    const userId = req.params.userId;
     const photos = await glacierService.getUserPhotos(userId);
-
-    res.json({ success: true, photos, count: photos.length });
+    res.json({ success: true, photos });
   } catch (error: any) {
-    console.error('Get user photos error:', error);
-    res.status(500).json({ error: error.message || 'Failed to get user photos' });
+    res.status(500).json({ error: error.message });
   }
 });
 
-/**
- * POST /api/photos/:photoId/restore
- * Request photo restoration from Glacier
- * 🔒 Requires: JWT authentication + photo ownership
- */
-router.post('/:photoId/restore', authenticateJWT, authorizePhotoOwner(glacierService), async (req: Request, res: Response) => {
-  try {
-    const { photoId } = req.params;
-    const { tier = 'Standard' } = req.body;
-
-    await glacierService.requestRestore(photoId, tier);
-
-    const estimatedHours = tier === 'Bulk' ? 48 : 12;
-
-    res.json({
-      success: true,
-      message: `Restore requested. Estimated completion: ${estimatedHours} hours`,
-      tier,
-      estimatedHours,
-    });
-  } catch (error: any) {
-    console.error('Restore request error:', error);
-    res.status(500).json({ error: error.message || 'Failed to request restoration' });
-  }
-});
-
-/**
- * GET /api/photos/:photoId/restore/status
- * Check restore status
- * 🔒 Requires: JWT authentication + photo ownership
- */
-router.get('/:photoId/restore/status', authenticateJWT, authorizePhotoOwner(glacierService), async (req: Request, res: Response) => {
-  try {
-    const { photoId } = req.params;
-    const status = await glacierService.checkRestoreStatus(photoId);
-
-    res.json({ success: true, photoId, status });
-  } catch (error: any) {
-    console.error('Check status error:', error);
-    res.status(500).json({ error: error.message || 'Failed to check restore status' });
-  }
-});
-
-/**
- * GET /api/photos/:photoId/download
- * Get download URL for restored photo
- * 🔒 Requires: JWT authentication + photo ownership
- */
-router.get('/:photoId/download', authenticateJWT, authorizePhotoOwner(glacierService), async (req: Request, res: Response) => {
-  try {
-    const { photoId } = req.params;
-    const downloadUrl = await glacierService.getDownloadUrl(photoId);
-
-    res.json({
-      success: true,
-      downloadUrl,
-      expiresIn: 3600, // 1 hour
-    });
-  } catch (error: any) {
-    console.error('Download URL error:', error);
-    res.status(500).json({ error: error.message || 'Failed to generate download URL' });
-  }
-});
-
-/**
- * PUT /api/photos/:photoId
- * Update photo metadata
- * 🔒 Requires: JWT authentication + photo ownership
- */
-router.put('/:photoId', authenticateJWT, authorizePhotoOwner(glacierService), async (req: Request, res: Response) => {
-  try {
-    const { photoId } = req.params;
-    const { title, description, tags } = req.body;
-
-    const photo = await glacierService.updatePhotoMetadata(photoId, {
-      title,
-      description,
-      tags,
-    });
-
-    res.json({ success: true, photo });
-  } catch (error: any) {
-    console.error('Update metadata error:', error);
-    res.status(500).json({ error: error.message || 'Failed to update photo metadata' });
-  }
-});
-
-/**
- * DELETE /api/photos/:photoId
- * Delete photo
- * 🔒 Requires: JWT authentication + photo ownership
- */
-router.delete('/:photoId', authenticateJWT, authorizePhotoOwner(glacierService), async (req: Request, res: Response) => {
-  try {
-    const { photoId } = req.params;
-    await glacierService.deletePhoto(photoId);
-
-    res.json({ success: true, message: 'Photo deleted successfully' });
-  } catch (error: any) {
-    console.error('Delete photo error:', error);
-    res.status(500).json({ error: error.message || 'Failed to delete photo' });
-  }
-});
-
-/**
- * GET /api/photos/user/:userId/stats
- * Get storage statistics for a user
- * 🔒 Requires: JWT authentication + userId ownership
- */
+// Get user stats
 router.get('/user/:userId/stats', authenticateJWT, authorizeOwner, async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
+    const userId = req.params.userId;
     const stats = await glacierService.getUserStats(userId);
-
     res.json({ success: true, stats });
   } catch (error: any) {
-    console.error('Get stats error:', error);
-    res.status(500).json({ error: error.message || 'Failed to get user stats' });
+    res.status(500).json({ error: error.message });
   }
 });
 
-/**
- * GET /api/photos/user/:userId/tags
- * Get all unique tags for a user
- * 🔒 Requires: JWT authentication + userId ownership
- */
+// Get user tags
 router.get('/user/:userId/tags', authenticateJWT, authorizeOwner, async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
+    const userId = req.params.userId;
     const tags = await glacierService.getUserTags(userId);
-
     res.json({ success: true, tags });
   } catch (error: any) {
-    console.error('Get tags error:', error);
-    res.status(500).json({ error: error.message || 'Failed to get user tags' });
+    res.status(500).json({ error: error.message });
   }
 });
 
-/**
- * GET /api/photos/user/:userId/monthly-stats
- * Get monthly storage statistics for a user (last 12 months)
- * 🔒 Requires: JWT authentication + userId ownership
- */
+// Get monthly stats
 router.get('/user/:userId/monthly-stats', authenticateJWT, authorizeOwner, async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
+    const userId = req.params.userId;
     const monthlyStats = await glacierService.getMonthlyStats(userId);
-
     res.json({ success: true, monthlyStats });
   } catch (error: any) {
-    console.error('Get monthly stats error:', error);
-    res.status(500).json({ error: error.message || 'Failed to get monthly stats' });
+    res.status(500).json({ error: error.message });
   }
 });
+
+// Request restore
+router.post(
+  '/:photoId/restore',
+  authenticateJWT,
+  authorizePhotoOwner(glacierService),
+  async (req: Request, res: Response) => {
+    try {
+      const photoId = req.params.photoId;
+      const { tier } = req.body;
+      await glacierService.requestRestore(photoId, tier);
+
+      // Calculate estimated hours
+      const estimatedHours = tier === 'Bulk' ? 48 : 12;
+
+      res.json({ success: true, estimatedHours });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// Check restore status
+router.get(
+  '/:photoId/restore/status',
+  authenticateJWT,
+  authorizePhotoOwner(glacierService),
+  async (req: Request, res: Response) => {
+    try {
+      const photoId = req.params.photoId;
+      const status = await glacierService.checkRestoreStatus(photoId);
+      res.json({ success: true, status });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// Get download URL
+router.get(
+  '/:photoId/download',
+  authenticateJWT,
+  authorizePhotoOwner(glacierService),
+  async (req: Request, res: Response) => {
+    try {
+      const photoId = req.params.photoId;
+      const downloadUrl = await glacierService.getDownloadUrl(photoId);
+      res.json({ success: true, downloadUrl });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// Delete photo
+router.delete(
+  '/:photoId',
+  authenticateJWT,
+  authorizePhotoOwner(glacierService),
+  async (req: Request, res: Response) => {
+    try {
+      const photoId = req.params.photoId;
+      await glacierService.deletePhoto(photoId);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// Update photo metadata
+router.patch(
+  '/:photoId',
+  authenticateJWT,
+  authorizePhotoOwner(glacierService),
+  async (req: Request, res: Response) => {
+    try {
+      const photoId = req.params.photoId;
+      const updates = req.body;
+      const photo = await glacierService.updatePhotoMetadata(photoId, updates);
+      res.json({ success: true, photo });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
 
 export default router;
