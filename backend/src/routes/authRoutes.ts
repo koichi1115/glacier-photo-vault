@@ -5,10 +5,35 @@
 
 import express, { Request, Response } from 'express';
 import passport from '../config/passport';
-import { authService } from '../services/AuthService';
+import { AuthService } from '../services/AuthService';
 import { authenticateJWT } from '../middleware/auth';
+import pool from '../db';
 
 const router = express.Router();
+const authService = new AuthService();
+
+// Helper to upsert user
+const upsertUser = async (user: any, provider: string) => {
+  const now = Date.now();
+  const query = `
+    INSERT INTO users (id, email, name, provider, provider_id, created_at)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    ON CONFLICT(id) DO UPDATE SET
+      email = $2,
+      name = $3,
+      provider = $4,
+      provider_id = $5
+  `;
+
+  await pool.query(query, [
+    user.userId,
+    user.email,
+    user.displayName || user.email.split('@')[0],
+    provider,
+    user.id || user.userId, // passport profile id
+    now
+  ]);
+};
 
 // ============================================================
 // Google OAuth 2.0
@@ -36,9 +61,12 @@ router.get(
     session: false,
     failureRedirect: '/auth/failure',
   }),
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const user = req.user as any;
+
+      // Save user to DB
+      await upsertUser(user, 'google');
 
       // JWTトークンを生成
       const accessToken = authService.generateAccessToken({
@@ -47,7 +75,7 @@ router.get(
         provider: 'google',
       });
 
-      const refreshToken = authService.generateRefreshToken(user.userId);
+      const refreshToken = await authService.generateRefreshToken(user.userId);
 
       // フロントエンドにリダイレクト（トークンをクエリパラメータで渡す）
       // 本番環境では、より安全な方法（HTTPOnly Cookie等）を検討
@@ -87,9 +115,12 @@ router.get(
     session: false,
     failureRedirect: '/auth/failure',
   }),
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const user = req.user as any;
+
+      // Save user to DB
+      await upsertUser(user, 'line');
 
       // JWTトークンを生成
       const accessToken = authService.generateAccessToken({
@@ -98,7 +129,7 @@ router.get(
         provider: 'line',
       });
 
-      const refreshToken = authService.generateRefreshToken(user.userId);
+      const refreshToken = await authService.generateRefreshToken(user.userId);
 
       // フロントエンドにリダイレクト
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -121,7 +152,7 @@ router.get(
  * POST /api/auth/refresh
  * Body: { refreshToken: string }
  */
-router.post('/refresh', (req: Request, res: Response) => {
+router.post('/refresh', async (req: Request, res: Response) => {
   try {
     const { refreshToken } = req.body;
 
@@ -133,20 +164,20 @@ router.post('/refresh', (req: Request, res: Response) => {
       return;
     }
 
-    // リフレッシュトークンを検証
-    const payload = authService.verifyRefreshToken(refreshToken);
+    // Use new refresh logic which handles verification, rotation, and DB check
+    const result = await authService.refreshAccessToken(refreshToken);
 
-    // 新しいアクセストークンを生成（リフレッシュトークンは再利用）
-    // 実際の本番環境では、リフレッシュトークンも定期的にローテーションすることを推奨
-    const newAccessToken = authService.generateAccessToken({
-      userId: payload.userId,
-      email: '', // リフレッシュトークンにはemailがないため空文字
-      provider: 'google', // プロバイダー情報を保持する場合は別途保存が必要
-    });
+    if (!result) {
+      res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Invalid or expired refresh token',
+      });
+      return;
+    }
 
     res.json({
-      accessToken: newAccessToken,
-      refreshToken, // 既存のリフレッシュトークンをそのまま返す
+      accessToken: result.accessToken,
+      refreshToken: result.newRefreshToken,
     });
   } catch (error: any) {
     console.error('Token refresh error:', error.message);
@@ -163,13 +194,13 @@ router.post('/refresh', (req: Request, res: Response) => {
  * POST /api/auth/logout
  * Body: { refreshToken: string }
  */
-router.post('/logout', (req: Request, res: Response) => {
+router.post('/logout', async (req: Request, res: Response) => {
   try {
     const { refreshToken } = req.body;
 
     if (refreshToken) {
       // リフレッシュトークンを無効化
-      authService.revokeRefreshToken(refreshToken);
+      await authService.revokeRefreshToken(refreshToken);
     }
 
     res.json({

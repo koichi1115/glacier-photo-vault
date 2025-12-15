@@ -1,177 +1,134 @@
-/**
- * 認証サービス
- * JWT（JSON Web Token）の生成・検証を行う
- * RS256アルゴリズムを使用（非対称鍵暗号）
- */
-
 import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
-import crypto from 'crypto';
+import pool from '../db';
 
-// JWTペイロード型定義
-export interface JwtPayload {
+interface TokenPayload {
   userId: string;
   email: string;
-  provider: 'google' | 'line';
-  iat?: number; // Issued At
-  exp?: number; // Expiration Time
-}
-
-// リフレッシュトークンペイロード型定義
-export interface RefreshTokenPayload {
-  userId: string;
-  tokenId: string; // トークンの一意識別子
-  iat?: number;
-  exp?: number;
+  provider: string;
 }
 
 export class AuthService {
   private privateKey: string;
   private publicKey: string;
-  private refreshTokens: Map<string, { userId: string; expiresAt: number }>; // 本番環境ではRedisなど使用
 
   constructor() {
-    // RSA鍵の読み込み
-    const keysDir = path.join(__dirname, '..', '..', 'keys');
-    this.privateKey = fs.readFileSync(path.join(keysDir, 'private.pem'), 'utf-8');
-    this.publicKey = fs.readFileSync(path.join(keysDir, 'public.pem'), 'utf-8');
-    this.refreshTokens = new Map();
+    // Load keys
+    try {
+      this.privateKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'private.key'), 'utf8');
+      this.publicKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'public.key'), 'utf8');
+    } catch (error) {
+      console.error('Error loading keys:', error);
+      this.privateKey = 'dev-private-key';
+      this.publicKey = 'dev-public-key';
+    }
 
-    console.log('✅ AuthService initialized with RS256 keys');
+    // Clean up expired tokens on startup
+    this.cleanupExpiredTokens();
+
+    // Schedule cleanup every 24 hours
+    setInterval(() => this.cleanupExpiredTokens(), 24 * 60 * 60 * 1000);
   }
 
   /**
-   * アクセストークンを生成（1時間有効）
+   * Generate Access Token (short-lived)
    */
-  generateAccessToken(payload: JwtPayload): string {
+  generateAccessToken(payload: TokenPayload): string {
     return jwt.sign(payload, this.privateKey, {
       algorithm: 'RS256',
-      expiresIn: '1h', // 1時間
+      expiresIn: '1h', // 1 hour
     });
   }
 
   /**
-   * リフレッシュトークンを生成（7日間有効）
+   * Generate Refresh Token (long-lived)
    */
-  generateRefreshToken(userId: string): string {
-    const tokenId = crypto.randomBytes(32).toString('hex');
-    const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7日後
+  async generateRefreshToken(userId: string): Promise<string> {
+    const refreshToken = uuidv4();
+    const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
 
-    const payload: RefreshTokenPayload = {
-      userId,
-      tokenId,
-    };
+    await pool.query(
+      'INSERT INTO refresh_tokens (token, user_id, expires_at) VALUES ($1, $2, $3)',
+      [refreshToken, userId, expiresAt]
+    );
 
-    const token = jwt.sign(payload, this.privateKey, {
-      algorithm: 'RS256',
-      expiresIn: '7d', // 7日間
+    return refreshToken;
+  }
+
+  /**
+   * Verify Access Token
+   */
+  verifyAccessToken(token: string): TokenPayload {
+    try {
+      return jwt.verify(token, this.publicKey, { algorithms: ['RS256'] }) as TokenPayload;
+    } catch (error) {
+      throw new Error('Invalid access token');
+    }
+  }
+
+  /**
+   * Refresh Access Token
+   */
+  async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string; newRefreshToken: string } | null> {
+    const res = await pool.query('SELECT * FROM refresh_tokens WHERE token = $1', [refreshToken]);
+    const row = res.rows[0];
+
+    if (!row) {
+      return null;
+    }
+
+    if (Number(row.expires_at) < Date.now()) {
+      // Expired
+      await pool.query('DELETE FROM refresh_tokens WHERE token = $1', [refreshToken]);
+      return null;
+    }
+
+    // Fetch user details
+    const userRes = await pool.query('SELECT * FROM users WHERE id = $1', [row.user_id]);
+    const user = userRes.rows[0];
+
+    if (!user) {
+      return null;
+    }
+
+    // Rotate refresh token
+    await pool.query('DELETE FROM refresh_tokens WHERE token = $1', [refreshToken]);
+    const newRefreshToken = await this.generateRefreshToken(row.user_id);
+    const newAccessToken = this.generateAccessToken({
+      userId: user.id,
+      email: user.email,
+      provider: user.provider
     });
 
-    // リフレッシュトークンをストアに保存（本番環境ではRedisを使用）
-    this.refreshTokens.set(tokenId, { userId, expiresAt });
-
-    return token;
+    return { accessToken: newAccessToken, newRefreshToken };
   }
 
   /**
-   * アクセストークンを検証
+   * Revoke Refresh Token (Logout)
    */
-  verifyAccessToken(token: string): JwtPayload {
-    try {
-      const decoded = jwt.verify(token, this.publicKey, {
-        algorithms: ['RS256'],
-      }) as JwtPayload;
-
-      return decoded;
-    } catch (error) {
-      if (error instanceof jwt.TokenExpiredError) {
-        throw new Error('Access token expired');
-      } else if (error instanceof jwt.JsonWebTokenError) {
-        throw new Error('Invalid access token');
-      }
-      throw new Error('Token verification failed');
-    }
+  async revokeRefreshToken(refreshToken: string): Promise<void> {
+    await pool.query('DELETE FROM refresh_tokens WHERE token = $1', [refreshToken]);
   }
 
   /**
-   * リフレッシュトークンを検証
+   * Clean up expired tokens
    */
-  verifyRefreshToken(token: string): RefreshTokenPayload {
-    try {
-      const decoded = jwt.verify(token, this.publicKey, {
-        algorithms: ['RS256'],
-      }) as RefreshTokenPayload;
-
-      // トークンストアに存在するか確認
-      const storedToken = this.refreshTokens.get(decoded.tokenId);
-      if (!storedToken) {
-        throw new Error('Refresh token not found');
-      }
-
-      // 有効期限チェック
-      if (storedToken.expiresAt < Date.now()) {
-        this.refreshTokens.delete(decoded.tokenId);
-        throw new Error('Refresh token expired');
-      }
-
-      // userIdが一致するか確認
-      if (storedToken.userId !== decoded.userId) {
-        throw new Error('Invalid refresh token');
-      }
-
-      return decoded;
-    } catch (error) {
-      if (error instanceof jwt.TokenExpiredError) {
-        throw new Error('Refresh token expired');
-      } else if (error instanceof jwt.JsonWebTokenError) {
-        throw new Error('Invalid refresh token');
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * リフレッシュトークンを無効化（ログアウト時）
-   */
-  revokeRefreshToken(token: string): void {
-    try {
-      const decoded = jwt.verify(token, this.publicKey, {
-        algorithms: ['RS256'],
-      }) as RefreshTokenPayload;
-
-      this.refreshTokens.delete(decoded.tokenId);
-      console.log(`🔒 Refresh token revoked: ${decoded.tokenId}`);
-    } catch (error) {
-      // トークンが無効でも特にエラーにしない
-      console.warn('Failed to revoke refresh token:', error);
-    }
-  }
-
-  /**
-   * 期限切れリフレッシュトークンのクリーンアップ
-   */
-  cleanupExpiredTokens(): void {
+  private async cleanupExpiredTokens(): Promise<void> {
     const now = Date.now();
-    let cleaned = 0;
-
-    for (const [tokenId, data] of this.refreshTokens.entries()) {
-      if (data.expiresAt < now) {
-        this.refreshTokens.delete(tokenId);
-        cleaned++;
-      }
+    try {
+      await pool.query('DELETE FROM refresh_tokens WHERE expires_at < $1', [now]);
+      console.log('🧹 Cleaned up expired refresh tokens');
+    } catch (error) {
+      console.error('Failed to cleanup expired tokens:', error);
     }
+  }
 
-    if (cleaned > 0) {
-      console.log(`🧹 Cleaned up ${cleaned} expired refresh tokens`);
-    }
+  /**
+   * Get public key for frontend verification (if needed)
+   */
+  getPublicKey(): string {
+    return this.publicKey;
   }
 }
-
-// シングルトンインスタンス
-export const authService = new AuthService();
-
-// 1時間ごとに期限切れトークンをクリーンアップ
-setInterval(() => {
-  authService.cleanupExpiredTokens();
-}, 60 * 60 * 1000);

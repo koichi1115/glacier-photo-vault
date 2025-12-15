@@ -11,7 +11,9 @@ import passport from './config/passport';
 import { SessionManager } from './services/SessionManager';
 import { setupSocketHandlers } from './socket/handlers';
 import photoRoutes from './routes/photoRoutes';
+
 import authRoutes from './routes/authRoutes';
+import { initDb } from './db';
 
 const app = express();
 const httpServer = createServer(app);
@@ -133,9 +135,17 @@ setupSocketHandlers(io, sessionManager);
 
 const PORT = process.env.PORT || 3000;
 
-httpServer.listen(PORT, () => {
-  console.log(`🔒 Glacier Photo Vault Server running on port ${PORT}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 CORS allowed origins: ${allowedOrigins.join(', ')}`);
-  console.log(`✅ Security middleware enabled: Helmet, CORS, Rate Limiting`);
+
+
+// Initialize Database
+initDb().then(() => {
+  httpServer.listen(PORT, () => {
+    console.log(`🔒 Glacier Photo Vault Server running on port ${PORT}`);
+    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌐 CORS allowed origins: ${allowedOrigins.join(', ')}`);
+    console.log(`✅ Security middleware enabled: Helmet, CORS, Rate Limiting`);
+  });
+}).catch(err => {
+  console.error('Failed to initialize database:', err);
+  process.exit(1);
 });
