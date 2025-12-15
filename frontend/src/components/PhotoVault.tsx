@@ -6,8 +6,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Photo, PhotoStatus } from '@glacier-photo-vault/shared';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+import { api } from '../services/api';
 
 interface PhotoVaultProps {
   userId: string;
@@ -195,11 +194,8 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
   const loadPhotos = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/photos/user/${userId}`);
-      const data = await response.json();
-      if (data.success) {
-        setPhotos(data.photos);
-      }
+      const photos = await api.getUserPhotos(userId);
+      setPhotos(photos);
     } catch (error) {
       console.error('Failed to load photos:', error);
     } finally {
@@ -209,11 +205,8 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
   const loadStats = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/photos/user/${userId}/stats`);
-      const data = await response.json();
-      if (data.success) {
-        setStats(data.stats);
-      }
+      const stats = await api.getUserStats(userId);
+      setStats(stats);
     } catch (error) {
       console.error('Failed to load stats:', error);
     }
@@ -221,11 +214,8 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
   const loadTags = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/photos/user/${userId}/tags`);
-      const data = await response.json();
-      if (data.success) {
-        setAvailableTags(data.tags);
-      }
+      const tags = await api.getUserTags(userId);
+      setAvailableTags(tags);
     } catch (error) {
       console.error('Failed to load tags:', error);
     }
@@ -233,11 +223,8 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
   const loadMonthlyStats = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/photos/user/${userId}/monthly-stats`);
-      const data = await response.json();
-      if (data.success) {
-        setMonthlyStats(data.monthlyStats);
-      }
+      const stats = await api.getMonthlyStats(userId);
+      setMonthlyStats(stats);
     } catch (error) {
       console.error('Failed to load monthly stats:', error);
     }
@@ -349,19 +336,8 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
         }
 
         try {
-          const response = await fetch(`${API_BASE_URL}/api/photos/upload`, {
-            method: 'POST',
-            body: formData,
-          });
-
-          const data = await response.json();
-          if (data.success) {
-            successCount++;
-          } else {
-            failCount++;
-            newFailedFiles.push(file);
-            failedFileNames.push(relativePath);
-          }
+          await api.uploadPhoto(formData);
+          successCount++;
         } catch (error) {
           console.error('Upload error:', error);
           failCount++;
@@ -505,13 +481,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
   const handleRestoreSingle = async (photoId: string, tier: 'Standard' | 'Bulk') => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/photos/${photoId}/restore`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier }),
-      });
-
-      const data = await response.json();
+      const data = await api.requestRestore(photoId, tier);
       if (data.success) {
         alert(`復元リクエストを送信しました。推定完了時間: ${data.estimatedHours}時間`);
         loadPhotos();
@@ -538,13 +508,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
     for (const photoId of selectedPhotoIds) {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/photos/${photoId}/restore`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tier }),
-        });
-
-        const data = await response.json();
+        const data = await api.requestRestore(photoId, tier);
         if (data.success) {
           successCount++;
         } else {
@@ -563,8 +527,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
   const checkRestoreStatus = async (photoId: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/photos/${photoId}/restore/status`);
-      const data = await response.json();
+      const data = await api.checkRestoreStatus(photoId);
       if (data.success) {
         alert(`復元状態: ${data.status}`);
         loadPhotos();
@@ -576,8 +539,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
   const handleDownload = async (photoId: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/photos/${photoId}/download`);
-      const data = await response.json();
+      const data = await api.getDownloadUrl(photoId);
       if (data.success) {
         window.open(data.downloadUrl, '_blank');
       } else {
@@ -882,10 +844,10 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
                 {(selectedFiles.length > 0 ? selectedFiles : (selectedFile ? [selectedFile] : [])).map((file, index) => {
                   const relativePath = (file as any).webkitRelativePath || file.name;
                   const fileIcon = file.type.startsWith('image/') ? '🖼️' :
-                                  file.type.startsWith('video/') ? '🎬' :
-                                  file.type.startsWith('audio/') ? '🎵' :
-                                  file.type.includes('pdf') ? '📄' :
-                                  file.type.includes('zip') ? '📦' : '📁';
+                    file.type.startsWith('video/') ? '🎬' :
+                      file.type.startsWith('audio/') ? '🎵' :
+                        file.type.includes('pdf') ? '📄' :
+                          file.type.includes('zip') ? '📦' : '📁';
                   return (
                     <div key={index} className="text-dads-xs text-dads-text-secondary flex items-start gap-2 px-2 py-1 hover:bg-blue-100 rounded">
                       <span className="flex-shrink-0">{fileIcon}</span>
@@ -1166,11 +1128,10 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
                             setItemsPerPage(count);
                             setCurrentPage(1);
                           }}
-                          className={`px-3 py-2 rounded-dads-sm text-dads-sm transition-colors ${
-                            itemsPerPage === count
+                          className={`px-3 py-2 rounded-dads-sm text-dads-sm transition-colors ${itemsPerPage === count
                               ? 'bg-dads-primary text-white'
                               : 'bg-dads-bg-secondary text-dads-text-secondary hover:bg-dads-bg-tertiary'
-                          }`}
+                            }`}
                         >
                           {count}
                         </button>
