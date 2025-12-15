@@ -33,7 +33,7 @@ const upload = multer({
       cb(null, { fieldName: file.fieldname });
     },
     key: function (req: any, file, cb) {
-      const userId = req.user!.userId;
+      const userId = req.user?.userId || 'unknown';
       const relativePath = req.body.relativePath || file.originalname;
       // Sanitize path to prevent directory traversal or weird chars
       const safePath = relativePath.replace(/[^a-zA-Z0-9_\-\.\/]/g, '_');
@@ -43,7 +43,7 @@ const upload = multer({
     serverSideEncryption: 'AES256',
     // Storage class
     storageClass: 'DEEP_ARCHIVE'
-  }),
+  } as any),
   limits: {
     fileSize: 100 * 1024 * 1024, // 100MB limit
   },
