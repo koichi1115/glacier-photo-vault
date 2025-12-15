@@ -1,0 +1,54 @@
+# Render.com デプロイ設定
+# https://render.com/docs/yaml-spec
+
+services:
+  # バックエンドサービス
+  - type: web
+    name: glacier-photo-vault-backend
+    env: node
+    region: oregon  # or: virginia, frankfurt, singapore
+    plan: starter  # $7/月（無料枠はfree）
+    buildCommand: cd backend && npm install && npm run build
+    startCommand: cd backend && npm start
+    healthCheckPath: /health
+
+    envVars:
+      # Node.js設定
+      - key: NODE_ENV
+        value: production
+
+      # AWS設定（Render Dashboard → Environment で設定）
+      - key: AWS_REGION
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_BUCKET_NAME
+        value: glacier-photo-vault
+
+      # OAuth設定
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: LINE_CHANNEL_ID
+        sync: false
+      - key: LINE_CHANNEL_SECRET
+        sync: false
+
+      # アプリケーション設定
+      - key: PORT
+        value: 3000
+
+      # 以下はデプロイ後に手動設定
+      # GOOGLE_CALLBACK_URL: https://YOUR_APP.onrender.com/api/auth/google/callback
+      # LINE_CALLBACK_URL: https://YOUR_APP.onrender.com/api/auth/line/callback
+      # FRONTEND_URL: https://YOUR_FRONTEND.vercel.app
+
+# フロントエンド（Vercelを使う場合は不要）
+# - type: web
+#   name: glacier-photo-vault-frontend
+#   env: static
+#   buildCommand: cd frontend && npm install && npm run build
+#   staticPublishPath: frontend/dist

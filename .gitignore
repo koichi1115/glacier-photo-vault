@@ -53,3 +53,14 @@ ios/GlacierPhotoVault/build/
 # Temporary files
 tmp/
 temp/
+
+# JWT Keys (秘密鍵を含むため厳重に管理)
+backend/keys/
+*.pem
+
+# Backup files
+*.backup
+*.bak
+
+# AWS/Render scripts (local only)
+update-env-aws.sh

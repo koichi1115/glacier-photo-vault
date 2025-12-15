@@ -1,6 +1,8 @@
 import express, { Request, Response } from 'express';
 import multer from 'multer';
 import { GlacierPhotoService } from '../services/GlacierPhotoService';
+import { authenticateJWT } from '../middleware/auth';
+import { authorizeOwner, authorizePhotoOwner } from '../middleware/authorize';
 
 const router = express.Router();
 const glacierService = new GlacierPhotoService();
@@ -12,11 +14,21 @@ const upload = multer({
     fileSize: 100 * 1024 * 1024, // 100MB limit
   },
   fileFilter: (req, file, cb) => {
-    // Accept images only
-    if (file.mimetype.startsWith('image/')) {
+    // Accept images, videos, and other common file types
+    const allowedMimeTypes = [
+      'image/', 'video/', 'audio/',
+      'application/pdf', 'application/zip',
+      'application/x-zip-compressed',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument',
+      'text/'
+    ];
+
+    const isAllowed = allowedMimeTypes.some(type => file.mimetype.startsWith(type));
+    if (isAllowed) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed'));
+      cb(new Error('File type not supported'));
     }
   },
 });
@@ -24,26 +36,46 @@ const upload = multer({
 /**
  * POST /api/photos/upload
  * Upload a photo to Glacier Deep Archive
+ * 🔒 Requires: JWT authentication
  */
-router.post('/upload', upload.single('photo'), async (req: Request, res: Response) => {
+router.post('/upload', authenticateJWT, upload.single('photo'), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const { userId, title, description, tags } = req.body;
+    // ✅ SECURITY: userIdはJWTから取得（クライアントから受け取らない）
+    const userId = req.user!.userId;
+    const { title, description, tags, relativePath, thumbnail } = req.body;
 
-    if (!userId) {
-      return res.status(400).json({ error: 'userId is required' });
+    // Parse tags, handle empty string or undefined
+    let parsedTags: string[] = [];
+    if (tags && tags.trim() !== '') {
+      try {
+        parsedTags = JSON.parse(tags);
+      } catch (e) {
+        console.error('Failed to parse tags:', tags);
+        parsedTags = [];
+      }
     }
 
-    const parsedTags = tags ? JSON.parse(tags) : [];
-
-    const photo = await glacierService.uploadPhoto(req.file, {
+    console.log('📨 Upload request:', {
       userId,
       title,
       description,
+      tagsRaw: tags,
+      tagsParsed: parsedTags,
+      relativePath,
+      hasThumbnail: !!thumbnail,
+    });
+
+    const photo = await glacierService.uploadPhoto(req.file, {
+      userId, // JWTから取得したuserId
+      title,
+      description,
       tags: parsedTags,
+      relativePath,
+      thumbnail,
     });
 
     res.status(201).json({
@@ -60,8 +92,9 @@ router.post('/upload', upload.single('photo'), async (req: Request, res: Respons
 /**
  * GET /api/photos/:photoId
  * Get photo metadata by ID
+ * 🔒 Requires: JWT authentication + photo ownership
  */
-router.get('/:photoId', async (req: Request, res: Response) => {
+router.get('/:photoId', authenticateJWT, authorizePhotoOwner(glacierService), async (req: Request, res: Response) => {
   try {
     const { photoId } = req.params;
     const photo = await glacierService.getPhoto(photoId);
@@ -80,9 +113,11 @@ router.get('/:photoId', async (req: Request, res: Response) => {
 /**
  * GET /api/photos/user/:userId
  * Get all photos for a user
+ * 🔒 Requires: JWT authentication + userId ownership
  */
-router.get('/user/:userId', async (req: Request, res: Response) => {
+router.get('/user/:userId', authenticateJWT, authorizeOwner, async (req: Request, res: Response) => {
   try {
+    // ✅ SECURITY: userIdはパラメータから取得するが、authorizeOwnerミドルウェアで検証済み
     const { userId } = req.params;
     const photos = await glacierService.getUserPhotos(userId);
 
@@ -96,8 +131,9 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
 /**
  * POST /api/photos/:photoId/restore
  * Request photo restoration from Glacier
+ * 🔒 Requires: JWT authentication + photo ownership
  */
-router.post('/:photoId/restore', async (req: Request, res: Response) => {
+router.post('/:photoId/restore', authenticateJWT, authorizePhotoOwner(glacierService), async (req: Request, res: Response) => {
   try {
     const { photoId } = req.params;
     const { tier = 'Standard' } = req.body;
@@ -121,8 +157,9 @@ router.post('/:photoId/restore', async (req: Request, res: Response) => {
 /**
  * GET /api/photos/:photoId/restore/status
  * Check restore status
+ * 🔒 Requires: JWT authentication + photo ownership
  */
-router.get('/:photoId/restore/status', async (req: Request, res: Response) => {
+router.get('/:photoId/restore/status', authenticateJWT, authorizePhotoOwner(glacierService), async (req: Request, res: Response) => {
   try {
     const { photoId } = req.params;
     const status = await glacierService.checkRestoreStatus(photoId);
@@ -137,8 +174,9 @@ router.get('/:photoId/restore/status', async (req: Request, res: Response) => {
 /**
  * GET /api/photos/:photoId/download
  * Get download URL for restored photo
+ * 🔒 Requires: JWT authentication + photo ownership
  */
-router.get('/:photoId/download', async (req: Request, res: Response) => {
+router.get('/:photoId/download', authenticateJWT, authorizePhotoOwner(glacierService), async (req: Request, res: Response) => {
   try {
     const { photoId } = req.params;
     const downloadUrl = await glacierService.getDownloadUrl(photoId);
@@ -157,8 +195,9 @@ router.get('/:photoId/download', async (req: Request, res: Response) => {
 /**
  * PUT /api/photos/:photoId
  * Update photo metadata
+ * 🔒 Requires: JWT authentication + photo ownership
  */
-router.put('/:photoId', async (req: Request, res: Response) => {
+router.put('/:photoId', authenticateJWT, authorizePhotoOwner(glacierService), async (req: Request, res: Response) => {
   try {
     const { photoId } = req.params;
     const { title, description, tags } = req.body;
@@ -179,8 +218,9 @@ router.put('/:photoId', async (req: Request, res: Response) => {
 /**
  * DELETE /api/photos/:photoId
  * Delete photo
+ * 🔒 Requires: JWT authentication + photo ownership
  */
-router.delete('/:photoId', async (req: Request, res: Response) => {
+router.delete('/:photoId', authenticateJWT, authorizePhotoOwner(glacierService), async (req: Request, res: Response) => {
   try {
     const { photoId } = req.params;
     await glacierService.deletePhoto(photoId);
@@ -195,8 +235,9 @@ router.delete('/:photoId', async (req: Request, res: Response) => {
 /**
  * GET /api/photos/user/:userId/stats
  * Get storage statistics for a user
+ * 🔒 Requires: JWT authentication + userId ownership
  */
-router.get('/user/:userId/stats', async (req: Request, res: Response) => {
+router.get('/user/:userId/stats', authenticateJWT, authorizeOwner, async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const stats = await glacierService.getUserStats(userId);
@@ -205,6 +246,40 @@ router.get('/user/:userId/stats', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Get stats error:', error);
     res.status(500).json({ error: error.message || 'Failed to get user stats' });
+  }
+});
+
+/**
+ * GET /api/photos/user/:userId/tags
+ * Get all unique tags for a user
+ * 🔒 Requires: JWT authentication + userId ownership
+ */
+router.get('/user/:userId/tags', authenticateJWT, authorizeOwner, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const tags = await glacierService.getUserTags(userId);
+
+    res.json({ success: true, tags });
+  } catch (error: any) {
+    console.error('Get tags error:', error);
+    res.status(500).json({ error: error.message || 'Failed to get user tags' });
+  }
+});
+
+/**
+ * GET /api/photos/user/:userId/monthly-stats
+ * Get monthly storage statistics for a user (last 12 months)
+ * 🔒 Requires: JWT authentication + userId ownership
+ */
+router.get('/user/:userId/monthly-stats', authenticateJWT, authorizeOwner, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const monthlyStats = await glacierService.getMonthlyStats(userId);
+
+    res.json({ success: true, monthlyStats });
+  } catch (error: any) {
+    console.error('Get monthly stats error:', error);
+    res.status(500).json({ error: error.message || 'Failed to get monthly stats' });
   }
 });
 

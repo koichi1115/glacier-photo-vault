@@ -16,12 +16,15 @@ interface PhotoMetadata {
   description?: string;
   tags: string[];
   userId: string;
+  relativePath?: string;
+  thumbnail?: string;
 }
 
 export class GlacierPhotoService {
   private s3Client: S3Client;
   private bucketName: string;
-  private photos: Map<string, Photo>; // In-memory storage for demo (use DB in production)
+  private photos: Map<string, Photo>; // In-memory cache
+  private userMetadataLoaded: Set<string>; // Track which users have loaded metadata
 
   constructor() {
     // Debug: Check if environment variables are loaded
@@ -40,6 +43,88 @@ export class GlacierPhotoService {
     });
     this.bucketName = process.env.S3_BUCKET_NAME || 'glacier-photo-vault';
     this.photos = new Map();
+    this.userMetadataLoaded = new Set();
+  }
+
+  /**
+   * Load user metadata from S3 JSON file
+   */
+  private async loadUserMetadata(userId: string): Promise<void> {
+    if (this.userMetadataLoaded.has(userId)) {
+      return; // Already loaded
+    }
+
+    const metadataKey = `${userId}/metadata.json`;
+
+    try {
+      const getCommand = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: metadataKey,
+      });
+
+      const response = await this.s3Client.send(getCommand);
+      const bodyString = await response.Body?.transformToString();
+
+      if (bodyString) {
+        const data = JSON.parse(bodyString);
+
+        // Load all photos into memory cache
+        if (data.photos) {
+          Object.values(data.photos).forEach((photo: any) => {
+            this.photos.set(photo.id, photo as Photo);
+          });
+        }
+      }
+
+      this.userMetadataLoaded.add(userId);
+      console.log(`✅ Loaded metadata for user: ${userId}`);
+    } catch (error: any) {
+      if (error.name === 'NoSuchKey') {
+        // No metadata file yet (new user)
+        console.log(`📝 No metadata file for user: ${userId} (will create on first upload)`);
+        this.userMetadataLoaded.add(userId);
+      } else {
+        console.error('Error loading user metadata:', error);
+        throw new Error('Failed to load user metadata');
+      }
+    }
+  }
+
+  /**
+   * Save user metadata to S3 JSON file
+   */
+  private async saveUserMetadata(userId: string): Promise<void> {
+    const userPhotos = Array.from(this.photos.values()).filter(
+      (photo) => photo.userId === userId
+    );
+
+    const metadata = {
+      photos: userPhotos.reduce((acc, photo) => {
+        acc[photo.id] = photo;
+        return acc;
+      }, {} as Record<string, Photo>),
+      lastUpdated: Date.now(),
+    };
+
+    const metadataKey = `${userId}/metadata.json`;
+
+    try {
+      const putCommand = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: metadataKey,
+        Body: JSON.stringify(metadata, null, 2),
+        ContentType: 'application/json',
+        // Use STANDARD storage for metadata (not Glacier)
+        StorageClass: 'STANDARD',
+        ServerSideEncryption: 'AES256', // SSE-S3 暗号化を明示的に指定
+      });
+
+      await this.s3Client.send(putCommand);
+      console.log(`✅ Saved metadata for user: ${userId}`);
+    } catch (error) {
+      console.error('Error saving user metadata:', error);
+      throw new Error('Failed to save user metadata');
+    }
   }
 
   /**
@@ -49,10 +134,41 @@ export class GlacierPhotoService {
     file: Express.Multer.File,
     metadata: PhotoMetadata
   ): Promise<Photo> {
+    // Load user metadata first
+    await this.loadUserMetadata(metadata.userId);
+
     const photoId = uuidv4();
-    const s3Key = `photos/${metadata.userId}/${photoId}/${file.originalname}`;
+    // Use relativePath if provided (for folder uploads), otherwise just use the filename
+    const filePath = metadata.relativePath || file.originalname;
+    const s3Key = `${metadata.userId}/${filePath}`;
 
     try {
+      // Sanitize and encode metadata values for HTTP headers
+      // HTTP headers only support ASCII characters, so we need to URL-encode non-ASCII characters
+      const sanitize = (str: string) => {
+        // First remove control characters
+        const cleaned = str.replace(/[\r\n\t\x00-\x1F\x7F]/g, ' ').trim();
+        // Then URL-encode to handle non-ASCII characters (Japanese, etc.)
+        return encodeURIComponent(cleaned);
+      };
+
+      // Prepare metadata object - only include tags if they exist
+      const s3Metadata: Record<string, string> = {
+        photoId,
+        userId: metadata.userId,
+        title: sanitize(metadata.title || ''),
+        description: sanitize(metadata.description || ''),
+      };
+
+      // Only add tags if array is not empty
+      if (metadata.tags && metadata.tags.length > 0) {
+        const tagsString = metadata.tags.join(',');
+        const encodedTags = sanitize(tagsString);
+        if (encodedTags) {
+          s3Metadata.tags = encodedTags;
+        }
+      }
+
       // Upload to S3 with Glacier Deep Archive storage class
       const putCommand = new PutObjectCommand({
         Bucket: this.bucketName,
@@ -60,13 +176,8 @@ export class GlacierPhotoService {
         Body: file.buffer,
         ContentType: file.mimetype,
         StorageClass: 'DEEP_ARCHIVE', // Glacier Deep Archive
-        Metadata: {
-          photoId,
-          userId: metadata.userId,
-          title: metadata.title || '',
-          description: metadata.description || '',
-          tags: metadata.tags.join(','),
-        },
+        Metadata: s3Metadata,
+        ServerSideEncryption: 'AES256', // SSE-S3 暗号化を明示的に指定
       });
 
       await this.s3Client.send(putCommand);
@@ -84,9 +195,14 @@ export class GlacierPhotoService {
         s3Key,
         status: PhotoStatus.ARCHIVED,
         uploadedAt: Date.now(),
+        thumbnailUrl: metadata.thumbnail, // Store base64 thumbnail
       };
 
       this.photos.set(photoId, photo);
+
+      // Save metadata to S3 JSON
+      await this.saveUserMetadata(metadata.userId);
+
       return photo;
     } catch (error) {
       console.error('Error uploading photo to Glacier:', error);
@@ -105,6 +221,9 @@ export class GlacierPhotoService {
    * Get all photos for a user
    */
   async getUserPhotos(userId: string): Promise<Photo[]> {
+    // Load user metadata first (if not already loaded)
+    await this.loadUserMetadata(userId);
+
     return Array.from(this.photos.values()).filter(
       (photo) => photo.userId === userId
     );
@@ -146,10 +265,14 @@ export class GlacierPhotoService {
       // Update photo status
       photo.status = PhotoStatus.RESTORE_REQUESTED;
       this.photos.set(photoId, photo);
+
+      // Save metadata to S3 JSON
+      await this.saveUserMetadata(photo.userId);
     } catch (error: any) {
       if (error.name === 'RestoreAlreadyInProgress') {
         photo.status = PhotoStatus.RESTORING;
         this.photos.set(photoId, photo);
+        await this.saveUserMetadata(photo.userId);
         return;
       }
       console.error('Error requesting restore:', error);
@@ -174,6 +297,8 @@ export class GlacierPhotoService {
 
       const response = await this.s3Client.send(headCommand);
 
+      const previousStatus = photo.status;
+
       if (response.Restore) {
         const restoreStatus = response.Restore;
 
@@ -196,6 +321,12 @@ export class GlacierPhotoService {
       }
 
       this.photos.set(photoId, photo);
+
+      // Save metadata if status changed
+      if (previousStatus !== photo.status) {
+        await this.saveUserMetadata(photo.userId);
+      }
+
       return photo.status;
     } catch (error) {
       console.error('Error checking restore status:', error);
@@ -254,6 +385,9 @@ export class GlacierPhotoService {
 
       await this.s3Client.send(deleteCommand);
       this.photos.delete(photoId);
+
+      // Save metadata to S3 JSON
+      await this.saveUserMetadata(photo.userId);
     } catch (error) {
       console.error('Error deleting photo:', error);
       throw new Error('Failed to delete photo');
@@ -277,6 +411,10 @@ export class GlacierPhotoService {
     if (updates.tags !== undefined) photo.tags = updates.tags;
 
     this.photos.set(photoId, photo);
+
+    // Save metadata to S3 JSON
+    await this.saveUserMetadata(photo.userId);
+
     return photo;
   }
 
@@ -302,5 +440,70 @@ export class GlacierPhotoService {
       ).length,
       restored: userPhotos.filter(p => p.status === PhotoStatus.RESTORED).length,
     };
+  }
+
+  /**
+   * Get all unique tags for a user
+   */
+  async getUserTags(userId: string): Promise<string[]> {
+    const userPhotos = await this.getUserPhotos(userId);
+    const tagsSet = new Set<string>();
+
+    userPhotos.forEach(photo => {
+      if (photo.tags && photo.tags.length > 0) {
+        photo.tags.forEach(tag => {
+          if (tag && tag.trim() !== '') {
+            tagsSet.add(tag);
+          }
+        });
+      }
+    });
+
+    return Array.from(tagsSet).sort();
+  }
+
+  /**
+   * Get monthly storage statistics for a user (last 12 months)
+   */
+  async getMonthlyStats(userId: string): Promise<Array<{
+    month: string;
+    totalSize: number;
+    photoCount: number;
+  }>> {
+    const userPhotos = await this.getUserPhotos(userId);
+
+    // Group by month
+    const monthlyData = new Map<string, { totalSize: number; photoCount: number }>();
+
+    userPhotos.forEach(photo => {
+      const date = new Date(photo.uploadedAt);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+      if (!monthlyData.has(monthKey)) {
+        monthlyData.set(monthKey, { totalSize: 0, photoCount: 0 });
+      }
+
+      const data = monthlyData.get(monthKey)!;
+      data.totalSize += photo.size;
+      data.photoCount += 1;
+    });
+
+    // Get last 12 months
+    const result: Array<{ month: string; totalSize: number; photoCount: number }> = [];
+    const now = new Date();
+
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+      const data = monthlyData.get(monthKey) || { totalSize: 0, photoCount: 0 };
+      result.push({
+        month: monthKey,
+        totalSize: data.totalSize,
+        photoCount: data.photoCount,
+      });
+    }
+
+    return result;
   }
 }

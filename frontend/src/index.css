@@ -2,9 +2,196 @@
 @tailwind components;
 @tailwind utilities;
 
+/* DADSカスタムプロパティ */
+:root {
+  /* カラー */
+  --dads-primary: #0066CC;
+  --dads-primary-hover: #0052A3;
+  --dads-primary-active: #003D7A;
+  --dads-success: #00703C;
+  --dads-warning: #FF6B00;
+  --dads-danger: #D93F00;
+  --dads-info: #0066CC;
+
+  /* テキスト */
+  --dads-text-primary: #1A1A1A;
+  --dads-text-secondary: #5F5F5F;
+  --dads-text-tertiary: #8C8C8C;
+
+  /* 背景 */
+  --dads-bg-base: #FFFFFF;
+  --dads-bg-secondary: #F7F7F7;
+  --dads-bg-tertiary: #EEEEEE;
+
+  /* ボーダー */
+  --dads-border: #D6D6D6;
+  --dads-border-focus: #0066CC;
+
+  /* シャドウ */
+  --dads-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --dads-shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --dads-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+  /* スペーシング（8pxグリッド） */
+  --dads-space-1: 8px;
+  --dads-space-2: 16px;
+  --dads-space-3: 24px;
+  --dads-space-4: 32px;
+  --dads-space-5: 40px;
+  --dads-space-6: 48px;
+
+  /* タイポグラフィ */
+  --dads-font-family: "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans", "Noto Sans CJK JP", "Original Yu Gothic", "Yu Gothic", sans-serif;
+  --dads-font-size-xs: 12px;
+  --dads-font-size-sm: 14px;
+  --dads-font-size-base: 16px;
+  --dads-font-size-lg: 18px;
+  --dads-font-size-xl: 20px;
+  --dads-font-size-2xl: 24px;
+  --dads-font-size-3xl: 32px;
+  --dads-font-size-4xl: 40px;
+
+  /* 角丸 */
+  --dads-radius-sm: 4px;
+  --dads-radius-md: 8px;
+  --dads-radius-lg: 12px;
+}
+
+@layer base {
+  /* DADSベーススタイル */
+  html {
+    font-family: var(--dads-font-family);
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--dads-text-primary);
+    background-color: var(--dads-bg-secondary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* アクセシビリティ: フォーカスリング */
+  *:focus-visible {
+    outline: 2px solid var(--dads-border-focus);
+    outline-offset: 2px;
+  }
+
+  /* 最小タップ領域（44px×44px） */
+  button,
+  a,
+  input[type="button"],
+  input[type="submit"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
 /* Custom styles */
 #root {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+}
+
+/* カードホバーエフェクト */
+@layer components {
+  .card-hover {
+    transition: all 0.2s ease-in-out;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border-color: var(--dads-primary);
+  }
+
+  /* 統計カードのホバーエフェクト */
+  .stat-card-hover {
+    transition: all 0.2s ease-in-out;
+  }
+
+  .stat-card-hover:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 16px -4px rgba(0, 102, 204, 0.15);
+    border-color: var(--dads-primary);
+  }
+
+  /* アニメーション: フェードイン */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  /* アニメーション: パルス（空の状態用） */
+  @keyframes pulse-slow {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  .animate-pulse-slow {
+    animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* アニメーション: スケルトンローディング */
+  @keyframes skeleton-loading {
+    0% {
+      background-position: -200px 0;
+    }
+    100% {
+      background-position: calc(200px + 100%) 0;
+    }
+  }
+
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--dads-bg-tertiary) 0px,
+      var(--dads-bg-secondary) 40px,
+      var(--dads-bg-tertiary) 80px
+    );
+    background-size: 200px 100%;
+    animation: skeleton-loading 1.2s ease-in-out infinite;
+  }
+
+  /* ボタンのリップルエフェクト */
+  .button-ripple {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .button-ripple::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+
+  .button-ripple:active::after {
+    width: 300px;
+    height: 300px;
+  }
 }
