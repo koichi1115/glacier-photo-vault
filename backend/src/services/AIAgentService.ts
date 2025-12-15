@@ -113,7 +113,7 @@ ${context}
    */
   async suggestGroupings(session: Session): Promise<{ name: string; ideaIds: string[] }[]> {
     try {
-      const context = session.ideas.map((idea, idx) =>
+      const context = session.ideas.map((idea: Idea, idx: number) =>
         `${idx + 1}. [ID: ${idea.id}] ${idea.content}`
       ).join('\n');
 
@@ -161,7 +161,7 @@ JSON形式で回答してください:
     }
 
     return session.ideas
-      .map((idea, idx) => `${idx + 1}. ${idea.content}`)
+      .map((idea: Idea, idx: number) => `${idx + 1}. ${idea.content}`)
       .join('\n');
   }
 }
