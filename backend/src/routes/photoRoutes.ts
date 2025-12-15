@@ -43,7 +43,7 @@ const upload = multer({
     serverSideEncryption: 'AES256',
     // Storage class
     storageClass: 'DEEP_ARCHIVE'
-  }),
+  } as any),
   limits: {
     fileSize: 100 * 1024 * 1024, // 100MB limit
   },
