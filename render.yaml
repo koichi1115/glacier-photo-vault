@@ -5,11 +5,11 @@ services:
   # バックエンドサービス
   - type: web
     name: glacier-photo-vault-backend
-    env: node
+    runtime: node
     region: oregon  # or: virginia, frankfurt, singapore
     plan: starter  # $7/月（無料枠はfree）
-    buildCommand: cd backend && npm install && npm run build
-    startCommand: cd backend && npm start
+    buildCommand: npm install && npm run build --workspace=backend
+    startCommand: npm run start --workspace=backend
     healthCheckPath: /health
 
     envVars:

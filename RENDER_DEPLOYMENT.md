@@ -45,10 +45,10 @@ git push -u origin main
 | **Name** | `glacier-photo-vault-backend` |
 | **Region** | `Oregon (US West)` または `Ohio (US East)` |
 | **Branch** | `main` |
-| **Root Directory** | `backend` |
+| **Root Directory** | （空欄 - リポジトリルートを使用） |
 | **Runtime** | `Node` |
-| **Build Command** | `npm install && npm run build` |
-| **Start Command** | `npm start` |
+| **Build Command** | `npm install && npm run build --workspace=backend` |
+| **Start Command** | `npm run start --workspace=backend` |
 | **Instance Type** | `Free` （開発・テスト用）<br>または `Starter ($7/月)` （本番用） |
 
 #### 3-3. 環境変数を設定
