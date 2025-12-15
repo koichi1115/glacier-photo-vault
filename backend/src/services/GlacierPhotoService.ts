@@ -120,7 +120,7 @@ export class GlacierPhotoService {
     const row = res.rows[0];
     const tagsRes = await pool.query('SELECT tag FROM photo_tags WHERE photo_id = $1', [photoId]);
 
-    return this.mapRowToPhoto(row, tagsRes.rows.map(t => t.tag));
+    return this.mapRowToPhoto(row, tagsRes.rows.map((t: any) => t.tag));
   }
 
   /**
@@ -415,7 +415,7 @@ export class GlacierPhotoService {
       ORDER BY t.tag
     `, [userId]);
 
-    return res.rows.map(r => r.tag);
+    return res.rows.map((r: any) => r.tag);
   }
 
   /**

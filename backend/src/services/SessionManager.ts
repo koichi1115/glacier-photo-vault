@@ -26,7 +26,7 @@ export class SessionManager {
     if (!session) return false;
 
     // Check if user already exists
-    if (session.users.find(u => u.id === user.id)) {
+    if (session.users.find((u: User) => u.id === user.id)) {
       return true;
     }
 
@@ -38,7 +38,7 @@ export class SessionManager {
     const session = this.sessions.get(sessionId);
     if (!session) return false;
 
-    session.users = session.users.filter(u => u.id !== userId);
+    session.users = session.users.filter((u: User) => u.id !== userId);
     return true;
   }
 
@@ -54,7 +54,7 @@ export class SessionManager {
     const session = this.sessions.get(sessionId);
     if (!session) return false;
 
-    const ideaIndex = session.ideas.findIndex(i => i.id === ideaId);
+    const ideaIndex = session.ideas.findIndex((i: Idea) => i.id === ideaId);
     if (ideaIndex === -1) return false;
 
     session.ideas[ideaIndex] = { ...session.ideas[ideaIndex], ...updates };
@@ -65,11 +65,11 @@ export class SessionManager {
     const session = this.sessions.get(sessionId);
     if (!session) return false;
 
-    session.ideas = session.ideas.filter(i => i.id !== ideaId);
+    session.ideas = session.ideas.filter((i: Idea) => i.id !== ideaId);
 
     // Remove from groups
-    session.groups.forEach(group => {
-      group.ideas = group.ideas.filter(id => id !== ideaId);
+    session.groups.forEach((group: IdeaGroup) => {
+      group.ideas = group.ideas.filter((id: string) => id !== ideaId);
     });
 
     return true;
@@ -87,7 +87,7 @@ export class SessionManager {
     const session = this.sessions.get(sessionId);
     if (!session) return false;
 
-    const groupIndex = session.groups.findIndex(g => g.id === groupId);
+    const groupIndex = session.groups.findIndex((g: IdeaGroup) => g.id === groupId);
     if (groupIndex === -1) return false;
 
     session.groups[groupIndex] = { ...session.groups[groupIndex], ...updates };
@@ -98,7 +98,7 @@ export class SessionManager {
     const session = this.sessions.get(sessionId);
     if (!session) return false;
 
-    session.groups = session.groups.filter(g => g.id !== groupId);
+    session.groups = session.groups.filter((g: IdeaGroup) => g.id !== groupId);
     return true;
   }
 
