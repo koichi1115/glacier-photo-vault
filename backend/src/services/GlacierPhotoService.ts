@@ -131,7 +131,7 @@ export class GlacierPhotoService {
 
     // Fetch tags for all photos
     // Optimization: Fetch all tags for these photos in one query
-    const photoIds = res.rows.map(r => r.id);
+    const photoIds = res.rows.map((r: any) => r.id);
     let tagsMap = new Map<string, string[]>();
 
     if (photoIds.length > 0) {
@@ -140,7 +140,7 @@ export class GlacierPhotoService {
         [photoIds]
       );
 
-      tagsRes.rows.forEach(row => {
+      tagsRes.rows.forEach((row: any) => {
         if (!tagsMap.has(row.photo_id)) {
           tagsMap.set(row.photo_id, []);
         }
@@ -148,7 +148,7 @@ export class GlacierPhotoService {
       });
     }
 
-    return res.rows.map(row => {
+    return res.rows.map((row: any) => {
       return this.mapRowToPhoto(row, tagsMap.get(row.id) || []);
     });
   }

@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import pool from '../db';
 
-interface TokenPayload {
+export interface JwtPayload {
   userId: string;
   email: string;
   provider: string;
@@ -35,7 +35,7 @@ export class AuthService {
   /**
    * Generate Access Token (short-lived)
    */
-  generateAccessToken(payload: TokenPayload): string {
+  generateAccessToken(payload: JwtPayload): string {
     return jwt.sign(payload, this.privateKey, {
       algorithm: 'RS256',
       expiresIn: '1h', // 1 hour
@@ -60,9 +60,9 @@ export class AuthService {
   /**
    * Verify Access Token
    */
-  verifyAccessToken(token: string): TokenPayload {
+  verifyAccessToken(token: string): JwtPayload {
     try {
-      return jwt.verify(token, this.publicKey, { algorithms: ['RS256'] }) as TokenPayload;
+      return jwt.verify(token, this.publicKey, { algorithms: ['RS256'] }) as JwtPayload;
     } catch (error) {
       throw new Error('Invalid access token');
     }
@@ -132,3 +132,5 @@ export class AuthService {
     return this.publicKey;
   }
 }
+
+export const authService = new AuthService();
