@@ -718,15 +718,15 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
                 tickFormatter={(value) => `${value.toFixed(0)} MB`}
               />
               <Tooltip
-                formatter={(value: number | undefined, name: string) => {
-                  if (value === undefined) return ['N/A', name];
+                formatter={(value: number | undefined, name: string | undefined) => {
+                  if (value === undefined) return ['N/A', name || ''];
                   if (name === 'sizeInMB') {
                     return [`${value.toFixed(2)} MB`, '容量'];
                   }
                   if (name === 'photoCount') {
                     return [`${value}件`, 'ファイル数'];
                   }
-                  return [value.toString(), name];
+                  return [value.toString(), name || ''];
                 }}
                 labelFormatter={(label) => {
                   const [year, month] = label.split('-');
