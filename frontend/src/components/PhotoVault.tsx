@@ -725,7 +725,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
                   if (name === 'photoCount') {
                     return [`${value}件`, 'ファイル数'];
                   }
-                  return value;
+                  return [value.toString(), name];
                 }}
                 labelFormatter={(label) => {
                   const [year, month] = label.split('-');
@@ -1129,8 +1129,8 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
                             setCurrentPage(1);
                           }}
                           className={`px-3 py-2 rounded-dads-sm text-dads-sm transition-colors ${itemsPerPage === count
-                              ? 'bg-dads-primary text-white'
-                              : 'bg-dads-bg-secondary text-dads-text-secondary hover:bg-dads-bg-tertiary'
+                            ? 'bg-dads-primary text-white'
+                            : 'bg-dads-bg-secondary text-dads-text-secondary hover:bg-dads-bg-tertiary'
                             }`}
                         >
                           {count}
@@ -1297,7 +1297,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
                             </div>
                             {photo.tags.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-1">
-                                {photo.tags.slice(0, 2).map((tag, idx) => (
+                                {photo.tags.slice(0, 2).map((tag: string, idx: number) => (
                                   <span key={idx} className="text-dads-xs text-dads-text-secondary bg-dads-bg-tertiary px-2 py-0.5 rounded">
                                     {tag}
                                   </span>
