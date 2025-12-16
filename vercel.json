@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build --workspace=@glacier-photo-vault/shared && (cd frontend && npm run build)",
+  "buildCommand": "pwd && ls -la && npm run build --workspace=@glacier-photo-vault/shared && pwd && ls -la && (cd frontend && npm run build)",
   "outputDirectory": "frontend/dist",
   "installCommand": "npm install",
   "rewrites": [
