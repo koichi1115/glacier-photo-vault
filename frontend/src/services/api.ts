@@ -1,4 +1,4 @@
-import { Photo } from '@glacier-photo-vault/shared';
+import type { Photo } from '@glacier-photo-vault/shared';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 

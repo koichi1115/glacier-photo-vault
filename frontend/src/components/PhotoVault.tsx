@@ -718,7 +718,8 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
                 tickFormatter={(value) => `${value.toFixed(0)} MB`}
               />
               <Tooltip
-                formatter={(value: number, name: string) => {
+                formatter={(value: number | undefined, name: string) => {
+                  if (value === undefined) return ['N/A', name];
                   if (name === 'sizeInMB') {
                     return [`${value.toFixed(2)} MB`, '容量'];
                   }
@@ -1297,7 +1298,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
                             </div>
                             {photo.tags.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-1">
-                                {photo.tags.slice(0, 2).map((tag: string, idx: number) => (
+                                {photo.tags.slice(0, 2).map((tag, idx) => (
                                   <span key={idx} className="text-dads-xs text-dads-text-secondary bg-dads-bg-tertiary px-2 py-0.5 rounded">
                                     {tag}
                                   </span>
