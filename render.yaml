@@ -8,7 +8,7 @@ services:
     runtime: node
     region: oregon  # or: virginia, frankfurt, singapore
     plan: starter  # $7/月（無料枠はfree）
-    buildCommand: npm install && npm run build --workspace=backend
+    buildCommand: npm install && npm run build --workspace=@glacier-photo-vault/shared && npm run build --workspace=@glacier-photo-vault/backend
     startCommand: npm run start --workspace=backend
     healthCheckPath: /health
 
