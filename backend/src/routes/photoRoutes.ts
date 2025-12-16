@@ -27,12 +27,12 @@ const upload = multer({
     s3: s3Client,
     bucket: bucketName,
     contentType: multerS3.AUTO_CONTENT_TYPE,
-    metadata: function (req, file, cb) {
+    metadata: function (req: any, file: any, cb: any) {
       // We can't easily access body fields here reliably because of multipart order
       // So we store minimal metadata here, and the rest in DB
       cb(null, { fieldName: file.fieldname });
     },
-    key: function (req: any, file, cb) {
+    key: function (req: any, file: any, cb: any) {
       const userId = req.user?.userId || 'unknown';
       const relativePath = req.body.relativePath || file.originalname;
       // Sanitize path to prevent directory traversal or weird chars
@@ -47,7 +47,7 @@ const upload = multer({
   limits: {
     fileSize: 100 * 1024 * 1024, // 100MB limit
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req: any, file: any, cb: any) => {
     // Allow images, videos, audio, pdf, zip, etc.
     if (file.mimetype.match(/^(image\/|video\/|audio\/|application\/pdf|application\/zip|application\/x-zip-compressed|multipart\/x-zip)/)) {
       cb(null, true);
