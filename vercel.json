@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://glacier-photo-vault-backend.onrender.com/api/$1"
+      "destination": "https://glacier-photo-vault.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",
