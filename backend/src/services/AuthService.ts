@@ -129,12 +129,6 @@ export class AuthService {
     }
   }
 
-  /**
-   * Get public key for frontend verification (if needed)
-   */
-  getPublicKey(): string {
-    return this.publicKey;
-  }
 }
 
 export const authService = new AuthService();
