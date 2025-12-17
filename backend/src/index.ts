@@ -7,6 +7,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import session from 'express-session';
 import passport from './config/passport';
 import { SessionManager } from './services/SessionManager';
 import { setupSocketHandlers } from './socket/handlers';
@@ -16,6 +17,9 @@ import authRoutes from './routes/authRoutes';
 import { initDb } from './db';
 
 const app = express();
+
+// Trust proxy - Required for Render.com deployment
+app.set('trust proxy', 1);
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
@@ -105,8 +109,21 @@ app.use(generalLimiter);
 
 app.use(express.json());
 
+// Session configuration for OAuth (required for LINE OAuth state parameter)
+app.use(session({
+  secret: process.env.SESSION_SECRET || process.env.JWT_SECRET || 'dev-session-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    httpOnly: true,
+    maxAge: 1000 * 60 * 15, // 15 minutes
+  }
+}));
+
 // Passport初期化
 app.use(passport.initialize());
+app.use(passport.session());
 
 // ============================================================
 // ルート
