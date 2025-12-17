@@ -11,18 +11,22 @@ export interface JwtPayload {
 }
 
 export class AuthService {
-  private privateKey: string;
-  private publicKey: string;
+  private secret: string;
 
   constructor() {
-    // Load keys
-    try {
-      this.privateKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'private.key'), 'utf8');
-      this.publicKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'public.key'), 'utf8');
-    } catch (error) {
-      console.error('Error loading keys:', error);
-      this.privateKey = 'dev-private-key';
-      this.publicKey = 'dev-public-key';
+    // Use JWT_SECRET from environment variable, or fall back to file-based keys for backward compatibility
+    if (process.env.JWT_SECRET) {
+      this.secret = process.env.JWT_SECRET;
+      console.log('✅ JWT secret loaded from environment variable');
+    } else {
+      // Try to load from files (for backward compatibility)
+      try {
+        this.secret = fs.readFileSync(path.join(process.cwd(), 'keys', 'private.key'), 'utf8');
+        console.log('✅ JWT secret loaded from file');
+      } catch (error) {
+        console.warn('⚠️  JWT_SECRET not set and keys not found - using fallback secret');
+        this.secret = 'dev-secret-key-change-in-production';
+      }
     }
 
     // Clean up expired tokens on startup
@@ -36,8 +40,8 @@ export class AuthService {
    * Generate Access Token (short-lived)
    */
   generateAccessToken(payload: JwtPayload): string {
-    return jwt.sign(payload, this.privateKey, {
-      algorithm: 'RS256',
+    return jwt.sign(payload, this.secret, {
+      algorithm: 'HS256', // Changed from RS256 to HS256 for symmetric key
       expiresIn: '1h', // 1 hour
     });
   }
@@ -62,7 +66,7 @@ export class AuthService {
    */
   verifyAccessToken(token: string): JwtPayload {
     try {
-      return jwt.verify(token, this.publicKey, { algorithms: ['RS256'] }) as JwtPayload;
+      return jwt.verify(token, this.secret, { algorithms: ['HS256'] }) as JwtPayload;
     } catch (error) {
       throw new Error('Invalid access token');
     }
