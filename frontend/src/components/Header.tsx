@@ -7,9 +7,12 @@ import React from 'react';
 
 interface HeaderProps {
   userName?: string;
+  displayName?: string;
+  profilePhoto?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ userName = 'demo-user' }) => {
+export const Header: React.FC<HeaderProps> = ({ userName = 'demo-user', displayName, profilePhoto }) => {
+  const displayedName = displayName || userName;
   return (
     <header className="bg-dads-bg-base border-b border-dads-border shadow-dads-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4">
@@ -82,14 +85,22 @@ export const Header: React.FC<HeaderProps> = ({ userName = 'demo-user' }) => {
 
             {/* ユーザーアバター */}
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-dads-primary rounded-full flex items-center justify-center">
-                <span className="text-white text-dads-sm font-semibold">
-                  {userName.charAt(0).toUpperCase()}
-                </span>
-              </div>
+              {profilePhoto ? (
+                <img
+                  src={profilePhoto}
+                  alt={displayedName}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 bg-dads-primary rounded-full flex items-center justify-center">
+                  <span className="text-white text-dads-sm font-semibold">
+                    {displayedName.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
               <div className="hidden lg:block">
                 <p className="text-dads-sm font-medium text-dads-text-primary">
-                  {userName}
+                  {displayedName}
                 </p>
                 <p className="text-dads-xs text-dads-text-secondary">
                   無料プラン

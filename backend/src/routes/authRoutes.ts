@@ -73,6 +73,8 @@ router.get(
         userId: user.userId,
         email: user.email,
         provider: 'google',
+        displayName: user.displayName,
+        profilePhoto: user.profilePhoto,
       });
 
       const refreshToken = await authService.generateRefreshToken(user.userId);
@@ -127,6 +129,8 @@ router.get(
         userId: user.userId,
         email: user.email,
         provider: 'line',
+        displayName: user.displayName,
+        profilePhoto: user.profilePhoto,
       });
 
       const refreshToken = await authService.generateRefreshToken(user.userId);

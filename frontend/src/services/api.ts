@@ -6,6 +6,8 @@ export interface User {
   userId: string;
   email: string;
   provider: string;
+  displayName?: string;
+  profilePhoto?: string;
 }
 
 class ApiService {

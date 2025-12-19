@@ -57,7 +57,11 @@ function App() {
   // Route: Main App
   return (
     <div className="app">
-      <Header userName={user.email.split('@')[0] || 'User'} />
+      <Header
+        userName={user.email.split('@')[0] || 'User'}
+        displayName={user.displayName}
+        profilePhoto={user.profilePhoto}
+      />
       <main className="flex-1 overflow-y-auto">
         <PhotoVault userId={user.userId} />
       </main>
