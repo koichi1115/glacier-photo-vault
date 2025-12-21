@@ -78,12 +78,15 @@
     background-attachment: fixed;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
     margin: 0;
     padding: 0;
     background: transparent;
+    overflow-x: hidden;
   }
 
   /* アクセシビリティ: フォーカスリング */
@@ -99,6 +102,19 @@
   input[type="submit"] {
     min-height: 44px;
     min-width: 44px;
+  }
+
+  /* モバイル対応: テキストの向きを強制的に横書きに */
+  * {
+    writing-mode: horizontal-tb;
+    text-orientation: mixed;
+  }
+
+  /* ボタンとリンクのテキストを常に横書きに */
+  button,
+  a,
+  span {
+    writing-mode: horizontal-tb !important;
   }
 }
 

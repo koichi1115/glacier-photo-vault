@@ -16,24 +16,24 @@ export const Header: React.FC<HeaderProps> = ({ userName = 'demo-user', displayN
   const displayedName = displayName || userName;
   return (
     <header className="bg-white/80 backdrop-blur-md border-b border-dads-border sticky top-0 z-50" style={{ boxShadow: 'var(--dads-shadow-sm)' }}>
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="flex justify-between items-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+        <div className="flex justify-between items-center gap-2">
           {/* ロゴ */}
-          <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-dads-lg flex items-center justify-center" style={{
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-dads-lg flex items-center justify-center flex-shrink-0" style={{
               background: 'linear-gradient(135deg, rgba(59, 158, 245, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%)',
               boxShadow: 'var(--dads-shadow-sm)'
             }}>
-              <GlacierLogo size={48} variant="gradient" />
+              <GlacierLogo size={40} variant="gradient" />
             </div>
-            <div>
-              <h1 className="text-xl font-extrabold text-dads-text-primary tracking-tight" style={{
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-xl font-extrabold text-dads-text-primary tracking-tight truncate" style={{
                 fontFamily: "'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                 letterSpacing: '-0.02em'
               }}>
                 Glacier Photo Vault
               </h1>
-              <p className="text-sm font-semibold text-dads-text-secondary mt-0.5" style={{
+              <p className="text-xs sm:text-sm font-semibold text-dads-text-secondary mt-0.5 truncate" style={{
                 fontFamily: "'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
               }}>
                 超低コスト写真保管サービス
@@ -64,10 +64,10 @@ export const Header: React.FC<HeaderProps> = ({ userName = 'demo-user', displayN
           </nav>
 
           {/* ユーザーメニュー */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
             {/* 通知アイコン */}
             <button
-              className="p-3 rounded-full hover:bg-dads-bg-secondary transition-all"
+              className="p-2 sm:p-3 rounded-full hover:bg-dads-bg-secondary transition-all"
               style={{ boxShadow: 'var(--dads-shadow-sm)' }}
               aria-label="通知"
             >
@@ -87,16 +87,16 @@ export const Header: React.FC<HeaderProps> = ({ userName = 'demo-user', displayN
             </button>
 
             {/* ユーザーアバター */}
-            <div className="flex items-center gap-3 px-4 py-2 rounded-full hover:bg-dads-bg-secondary transition-all cursor-pointer" style={{ boxShadow: 'var(--dads-shadow-sm)' }}>
+            <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-1 sm:py-2 rounded-full hover:bg-dads-bg-secondary transition-all cursor-pointer" style={{ boxShadow: 'var(--dads-shadow-sm)' }}>
               {profilePhoto ? (
                 <img
                   src={profilePhoto}
                   alt={displayedName}
-                  className="w-10 h-10 rounded-full object-cover ring-2 ring-dads-primary/20"
+                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover ring-2 ring-dads-primary/20 flex-shrink-0"
                 />
               ) : (
-                <div className="w-10 h-10 gradient-accent rounded-full flex items-center justify-center">
-                  <span className="text-white text-dads-sm font-semibold">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 gradient-accent rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-xs sm:text-dads-sm font-semibold">
                     {displayedName.charAt(0).toUpperCase()}
                   </span>
                 </div>

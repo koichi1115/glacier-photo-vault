@@ -622,12 +622,12 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
   );
 
   return (
-    <div className="p-6 sm:p-8 md:p-12 max-w-7xl mx-auto min-h-screen">
-      <div className="mb-8 sm:mb-12">
-        <h1 className="text-dads-3xl sm:text-dads-4xl md:text-5xl font-bold text-dads-text-primary mb-3" style={{ fontSize: '48px', lineHeight: '1.2' }}>
+    <div className="p-4 sm:p-6 md:p-8 lg:p-12 max-w-7xl mx-auto min-h-screen">
+      <div className="mb-6 sm:mb-8 md:mb-12">
+        <h1 className="text-2xl sm:text-dads-3xl md:text-dads-4xl lg:text-5xl font-bold text-dads-text-primary mb-2 sm:mb-3" style={{ lineHeight: '1.2' }}>
           📸 写真保管庫
         </h1>
-        <div className="flex items-center gap-2 text-dads-base text-dads-text-secondary">
+        <div className="flex items-center gap-2 text-sm sm:text-dads-base text-dads-text-secondary">
           <ClockIcon />
           <span>最終更新: {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })}</span>
         </div>
@@ -800,24 +800,26 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
             </div>
 
         {/* ファイル/フォルダ選択ボタン */}
-        <div className="flex gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6">
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex-1 btn-pill btn-pill-primary flex items-center justify-center gap-2 text-dads-base"
+            className="w-full sm:flex-1 btn-pill btn-pill-primary flex items-center justify-center gap-2 text-dads-base whitespace-nowrap"
+            style={{ minHeight: '48px' }}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            📁 ファイルを選択
+            <span className="inline-block">📁 ファイルを選択</span>
           </button>
           <button
             onClick={() => folderInputRef.current?.click()}
-            className="flex-1 btn-pill btn-pill-secondary flex items-center justify-center gap-2 text-dads-base"
+            className="w-full sm:flex-1 btn-pill btn-pill-secondary flex items-center justify-center gap-2 text-dads-base whitespace-nowrap"
+            style={{ minHeight: '48px' }}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
-            📂 フォルダを選択
+            <span className="inline-block">📂 フォルダを選択</span>
           </button>
         </div>
 
