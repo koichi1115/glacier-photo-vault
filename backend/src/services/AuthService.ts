@@ -8,6 +8,8 @@ export interface JwtPayload {
   userId: string;
   email: string;
   provider: string;
+  displayName?: string;
+  profilePhoto?: string;
 }
 
 export class AuthService {
