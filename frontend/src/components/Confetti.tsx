@@ -48,19 +48,8 @@ export const Confetti: React.FC<ConfettiProps> = ({ trigger, onComplete }) => {
   if (!isActive) return null;
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
-      {pieces.map((piece) => (
-        <div
-          key={piece.id}
-          className="confetti-piece"
-          style={{
-            left: `${piece.left}%`,
-            animationDelay: piece.animationDelay,
-            backgroundColor: piece.backgroundColor,
-          }}
-        />
-      ))}
-      <style jsx>{`
+    <>
+      <style>{`
         .confetti-piece {
           position: absolute;
           width: 10px;
@@ -81,6 +70,19 @@ export const Confetti: React.FC<ConfettiProps> = ({ trigger, onComplete }) => {
           }
         }
       `}</style>
-    </div>
+      <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
+        {pieces.map((piece) => (
+          <div
+            key={piece.id}
+            className="confetti-piece"
+            style={{
+              left: `${piece.left}%`,
+              animationDelay: piece.animationDelay,
+              backgroundColor: piece.backgroundColor,
+            }}
+          />
+        ))}
+      </div>
+    </>
   );
 };

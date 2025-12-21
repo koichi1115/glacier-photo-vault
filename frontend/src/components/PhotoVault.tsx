@@ -397,8 +397,8 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
       loadStats();
       loadTags();
       loadMonthlyStats();
-    } catch (error) {
-      console.error('Upload error:', error);
+    } catch (err) {
+      console.error('Upload error:', err);
       error('❌ アップロードに失敗しました');
     } finally {
       setUploading(false);
@@ -500,8 +500,8 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
         success(`✅ 復元リクエストを送信しました\n推定完了時間: ${data.estimatedHours}時間`);
         loadPhotos();
       }
-    } catch (error) {
-      console.error('Restore error:', error);
+    } catch (err) {
+      console.error('Restore error:', err);
       error('❌ 復元リクエストに失敗しました');
     }
   };
@@ -529,8 +529,8 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
         } else {
           failCount++;
         }
-      } catch (error) {
-        console.error('Restore error:', error);
+      } catch (err) {
+        console.error('Restore error:', err);
         failCount++;
       }
     }
@@ -551,8 +551,8 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
         info(`復元状態: ${data.status}`);
         loadPhotos();
       }
-    } catch (error) {
-      console.error('Status check error:', error);
+    } catch (err) {
+      console.error('Status check error:', err);
       error('ステータスの確認に失敗しました');
     }
   };
@@ -566,8 +566,8 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
       } else {
         error(data.error || 'ダウンロードに失敗しました');
       }
-    } catch (error) {
-      console.error('Download error:', error);
+    } catch (err) {
+      console.error('Download error:', err);
       error('❌ ダウンロードURLの取得に失敗しました');
     }
   };
@@ -778,15 +778,14 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
           setSelectedFiles(files);
           setSelectedFile(null);
           // Generate thumbnails
-          const newThumbnails: Record<string, string> = {};
           files.forEach(async (file) => {
             try {
               const thumbnail = await generateThumbnail(file);
               if (thumbnail) {
                 setThumbnails(prev => ({ ...prev, [file.name]: thumbnail }));
               }
-            } catch (error) {
-              console.error('サムネイル生成エラー:', error);
+            } catch (err) {
+              console.error('サムネイル生成エラー:', err);
             }
           });
         }}>
