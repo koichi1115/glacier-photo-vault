@@ -65,41 +65,46 @@ const SkeletonCard = () => (
 
 // 空の状態コンポーネント
 const EmptyState = () => (
-  <div className="bg-dads-bg-base rounded-dads-md shadow-dads-base p-12 text-center border border-dads-border animate-fade-in">
-    <div className="flex justify-center mb-6">
-      <div className="w-24 h-24 bg-dads-bg-secondary rounded-full flex items-center justify-center animate-pulse-slow">
-        <PhotoIcon />
-        <div className="w-16 h-16 text-dads-text-secondary">
+  <div className="nani-card p-16 text-center animate-fade-in">
+    <div className="flex justify-center mb-8">
+      <div className="w-32 h-32 rounded-full flex items-center justify-center animate-pulse-slow" style={{ background: 'linear-gradient(135deg, #E0F0FF 0%, #F0E8FF 100%)' }}>
+        <div className="w-20 h-20 text-dads-primary">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </div>
       </div>
     </div>
-    <h3 className="text-dads-xl font-bold text-dads-text-primary mb-2">
-      写真がまだありません
+    <h3 className="text-dads-2xl font-bold text-dads-text-primary mb-3">
+      📸 写真がまだありません
     </h3>
-    <p className="text-dads-text-secondary mb-6">
+    <p className="text-dads-base text-dads-text-secondary mb-8 max-w-xl mx-auto">
       上のフォームから写真をアップロードして、<br />
       超低コストのGlacier Deep Archiveで長期保管を始めましょう
     </p>
-    <div className="flex items-center justify-center gap-8 text-dads-sm text-dads-text-secondary">
-      <div className="flex items-center gap-2">
-        <svg className="w-5 h-5 text-dads-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
+    <div className="flex items-center justify-center gap-12 text-dads-base text-dads-text-secondary flex-wrap">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+          <svg className="w-5 h-5 text-dads-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
         <span>無料アップロード</span>
       </div>
-      <div className="flex items-center gap-2">
-        <svg className="w-5 h-5 text-dads-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+          <svg className="w-5 h-5 text-dads-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
         <span>超低コスト</span>
       </div>
-      <div className="flex items-center gap-2">
-        <svg className="w-5 h-5 text-dads-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+          <svg className="w-5 h-5 text-dads-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
         <span>99.999999999%耐久性</span>
       </div>
     </div>
@@ -601,12 +606,12 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
   );
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto bg-dads-bg-secondary min-h-screen">
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-dads-2xl sm:text-dads-3xl md:text-dads-4xl font-bold text-dads-text-primary mb-2">
-          写真保管庫
+    <div className="p-6 sm:p-8 md:p-12 max-w-7xl mx-auto min-h-screen">
+      <div className="mb-8 sm:mb-12">
+        <h1 className="text-dads-3xl sm:text-dads-4xl md:text-5xl font-bold text-dads-text-primary mb-3" style={{ fontSize: '48px', lineHeight: '1.2' }}>
+          📸 写真保管庫
         </h1>
-        <div className="flex items-center gap-2 text-dads-sm text-dads-text-secondary">
+        <div className="flex items-center gap-2 text-dads-base text-dads-text-secondary">
           <ClockIcon />
           <span>最終更新: {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })}</span>
         </div>
@@ -614,10 +619,10 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-12">
           {/* 総写真数 */}
           <div
-            className="bg-dads-bg-base rounded-dads-md shadow-dads-base p-4 sm:p-6 border border-dads-border stat-card-hover animate-fade-in cursor-pointer"
+            className="nani-card stat-card-hover p-6 sm:p-8 animate-fade-in cursor-pointer"
             style={{ animationDelay: '0s' }}
           >
             <div className="flex items-center justify-between mb-2">
@@ -631,7 +636,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
           {/* 総容量（復元コスト付き） */}
           <div
-            className="bg-dads-bg-base rounded-dads-md shadow-dads-base p-4 sm:p-6 border border-dads-border stat-card-hover animate-fade-in cursor-pointer"
+            className="nani-card stat-card-hover p-6 sm:p-8 animate-fade-in cursor-pointer"
             style={{ animationDelay: '0.1s' }}
           >
             <div className="flex items-center justify-between mb-2">
@@ -655,7 +660,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
           {/* アーカイブ済み */}
           <div
-            className="bg-dads-bg-base rounded-dads-md shadow-dads-base p-4 sm:p-6 border border-dads-border stat-card-hover animate-fade-in cursor-pointer"
+            className="nani-card stat-card-hover p-6 sm:p-8 animate-fade-in cursor-pointer"
             style={{ animationDelay: '0.2s' }}
           >
             <div className="flex items-center justify-between mb-2">
@@ -669,7 +674,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
           {/* 復元可能 */}
           <div
-            className="bg-dads-bg-base rounded-dads-md shadow-dads-base p-4 sm:p-6 border border-dads-border stat-card-hover animate-fade-in cursor-pointer"
+            className="nani-card stat-card-hover p-6 sm:p-8 animate-fade-in cursor-pointer"
             style={{ animationDelay: '0.3s' }}
           >
             <div className="flex items-center justify-between mb-2">
@@ -685,7 +690,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
       {/* Monthly Storage Chart */}
       {!loading && monthlyStats.length > 0 && (
-        <div className="bg-dads-bg-base rounded-dads-md shadow-dads-base p-4 sm:p-6 mb-6 sm:mb-8 border border-dads-border animate-fade-in">
+        <div className="nani-card p-6 sm:p-8 mb-8 sm:mb-12 animate-fade-in">
           <div className="flex items-center gap-3 mb-4 pb-3 border-b border-dads-border">
             <div className="w-10 h-10 bg-dads-primary/10 rounded-dads-md flex items-center justify-center text-dads-primary">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -748,7 +753,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
       )}
 
       {/* Upload Form */}
-      <div className="bg-dads-bg-base rounded-dads-md shadow-dads-base p-4 sm:p-6 mb-6 sm:mb-8 border border-dads-border animate-fade-in scroll-mt-24">
+      <div className="nani-card p-6 sm:p-8 mb-8 sm:mb-12 animate-fade-in scroll-mt-24">
         <div className="flex items-center gap-3 mb-4 pb-3 border-b border-dads-border">
           <div className="w-10 h-10 bg-dads-primary/10 rounded-dads-md flex items-center justify-center text-dads-primary">
             <UploadIcon />
@@ -759,24 +764,24 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
         </div>
 
         {/* ファイル/フォルダ選択ボタン */}
-        <div className="flex gap-3 mb-4">
+        <div className="flex gap-4 mb-6">
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex-1 px-4 py-3 bg-dads-primary text-white rounded-dads-md hover:bg-dads-primary-hover transition-all text-dads-sm font-medium flex items-center justify-center gap-2"
+            className="flex-1 btn-pill btn-pill-primary flex items-center justify-center gap-2 text-dads-base"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            ファイルを選択
+            📁 ファイルを選択
           </button>
           <button
             onClick={() => folderInputRef.current?.click()}
-            className="flex-1 px-4 py-3 border-2 border-dads-primary text-dads-primary rounded-dads-md hover:bg-blue-50 transition-all text-dads-sm font-medium flex items-center justify-center gap-2"
+            className="flex-1 btn-pill btn-pill-secondary flex items-center justify-center gap-2 text-dads-base"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
-            フォルダを選択
+            📂 フォルダを選択
           </button>
         </div>
 
@@ -865,57 +870,60 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
         )}
 
         {(selectedFile || selectedFiles.length > 0) && (
-          <div className="space-y-3 sm:space-y-4 animate-fade-in">
+          <div className="space-y-4 animate-fade-in">
             <input
               type="text"
-              placeholder={selectedFiles.length > 1 ? 'タイトル（オプション・全ファイル共通）' : 'タイトル（オプション）'}
+              placeholder={selectedFiles.length > 1 ? '✏️ タイトル（オプション・全ファイル共通）' : '✏️ タイトル（オプション）'}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-2 sm:py-3 border border-dads-border rounded-dads-md focus:outline-none focus:ring-2 focus:ring-dads-primary focus:border-dads-primary text-dads-text-primary transition-all"
+              className="w-full px-5 py-3 sm:py-4 border-2 border-dads-border rounded-dads-lg focus:outline-none focus:ring-2 focus:ring-dads-primary focus:border-dads-primary text-dads-text-primary transition-all"
+              style={{ fontSize: '16px' }}
               aria-label="写真のタイトル"
             />
             <textarea
-              placeholder={selectedFiles.length > 1 ? '説明（オプション・全ファイル共通）' : '説明（オプション）'}
+              placeholder={selectedFiles.length > 1 ? '📝 説明（オプション・全ファイル共通）' : '📝 説明（オプション）'}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-4 py-2 sm:py-3 border border-dads-border rounded-dads-md focus:outline-none focus:ring-2 focus:ring-dads-primary focus:border-dads-primary min-h-[80px] resize-y text-dads-text-primary transition-all"
+              className="w-full px-5 py-3 sm:py-4 border-2 border-dads-border rounded-dads-lg focus:outline-none focus:ring-2 focus:ring-dads-primary focus:border-dads-primary min-h-[100px] resize-y text-dads-text-primary transition-all"
+              style={{ fontSize: '16px' }}
               aria-label="写真の説明"
             />
             <input
               type="text"
-              placeholder="タグ（カンマ区切り、例: 旅行,風景）"
+              placeholder="🏷️ タグ（カンマ区切り、例: 旅行,風景）"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              className="w-full px-4 py-2 sm:py-3 border border-dads-border rounded-dads-md focus:outline-none focus:ring-2 focus:ring-dads-primary focus:border-dads-primary text-dads-text-primary transition-all"
+              className="w-full px-5 py-3 sm:py-4 border-2 border-dads-border rounded-dads-lg focus:outline-none focus:ring-2 focus:ring-dads-primary focus:border-dads-primary text-dads-text-primary transition-all"
+              style={{ fontSize: '16px' }}
               aria-label="写真のタグ"
             />
             {/* アップロード進捗バー */}
             {uploadProgress && (
-              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-dads-md">
-                <div className="mb-2">
-                  <div className="flex justify-between text-dads-sm font-medium text-dads-text-primary mb-1">
-                    <span>アップロード進捗</span>
+              <div className="mb-4 p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-dads-primary rounded-dads-lg">
+                <div className="mb-3">
+                  <div className="flex justify-between text-dads-base font-semibold text-dads-text-primary mb-2">
+                    <span>📤 アップロード進捗</span>
                     <span>{uploadProgress.current} / {uploadProgress.total}件</span>
                   </div>
                   {/* プログレスバー */}
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                  <div className="w-full bg-white rounded-full h-4 overflow-hidden shadow-inner">
                     <div
-                      className="bg-dads-primary h-full rounded-full transition-all duration-300"
+                      className="gradient-accent h-full rounded-full transition-all duration-300"
                       style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
                     />
                   </div>
                 </div>
-                <div className="text-dads-xs text-dads-text-secondary truncate">
+                <div className="text-dads-sm text-dads-text-secondary truncate">
                   現在のファイル: {uploadProgress.currentFile}
                 </div>
               </div>
             )}
 
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <button
                 onClick={() => handleUpload()}
                 disabled={uploading}
-                className="flex-1 bg-dads-primary text-white font-semibold py-3 px-6 rounded-dads-md hover:bg-dads-primary-hover active:bg-dads-primary-active focus:outline-none focus:ring-2 focus:ring-dads-primary focus:ring-offset-2 disabled:bg-dads-bg-tertiary disabled:text-dads-text-secondary disabled:cursor-not-allowed transition-all min-h-[44px] button-ripple"
+                className="flex-1 btn-pill btn-pill-primary disabled:opacity-50 disabled:cursor-not-allowed button-ripple"
                 aria-busy={uploading}
               >
                 {uploading ? (
@@ -927,24 +935,26 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
                     アップロード中...
                   </span>
                 ) : (
-                  `Glacier Deep Archiveにアップロード ${selectedFiles.length > 0 ? `(${selectedFiles.length}件)` : ''}`
+                  `🚀 Glacier Deep Archiveにアップロード ${selectedFiles.length > 0 ? `(${selectedFiles.length}件)` : ''}`
                 )}
               </button>
               {uploading ? (
                 <button
                   onClick={handleCancelUpload}
-                  className="px-6 py-3 border-2 border-red-500 text-red-600 rounded-dads-md hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all min-h-[44px] font-semibold"
+                  className="btn-pill px-6 py-3 border-2 border-red-500 text-red-600 hover:bg-red-50 font-semibold"
                   aria-label="アップロードを中断"
+                  style={{ borderRadius: 'var(--dads-radius-pill)' }}
                 >
-                  中断
+                  ⏸️ 中断
                 </button>
               ) : (
                 <button
                   onClick={handleClearSelection}
-                  className="px-6 py-3 border-2 border-dads-border text-dads-text-secondary rounded-dads-md hover:bg-dads-bg-secondary focus:outline-none focus:ring-2 focus:ring-dads-border focus:ring-offset-2 transition-all min-h-[44px] font-semibold"
+                  className="btn-pill px-6 py-3 bg-white border-2 border-dads-border text-dads-text-secondary hover:bg-dads-bg-secondary font-semibold"
                   aria-label="選択をクリア"
+                  style={{ borderRadius: 'var(--dads-radius-pill)' }}
                 >
-                  キャンセル
+                  ❌ キャンセル
                 </button>
               )}
             </div>
@@ -963,10 +973,10 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
               </div>
             )}
             <div
-              className="mt-4 p-6 rounded-dads-md flex gap-3 animate-fade-in"
+              className="mt-6 p-6 rounded-dads-lg flex gap-3 animate-fade-in"
               style={{
-                background: 'linear-gradient(135deg, #64D8C6 0%, #BCECD3 100%)',
-                boxShadow: '0 4px 12px rgba(100, 216, 198, 0.2)'
+                background: 'linear-gradient(135deg, #3B9EF5 0%, #A78BFA 100%)',
+                boxShadow: 'var(--dads-shadow-md)'
               }}
               role="note"
             >
@@ -1007,28 +1017,47 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
         {/* フィルター・並び替えコントロール */}
         {!loading && photos.length > 0 && (
-          <div className="bg-dads-bg-base rounded-dads-md border border-dads-border p-4 mb-4">
-            {/* フィルター行 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-              {/* ファイル種別フィルター */}
-              <div>
-                <label className="text-dads-xs font-medium text-dads-text-secondary mb-1 block">
-                  ファイル種別
-                </label>
-                <select
-                  value={filterType}
-                  onChange={(e) => {
-                    setFilterType(e.target.value as any);
-                    setCurrentPage(1);
-                  }}
-                  className="w-full px-3 py-2 text-dads-sm border border-dads-border rounded-dads-md focus:outline-none focus:ring-2 focus:ring-dads-primary"
+          <div className="nani-card p-6 mb-6">
+            {/* カテゴリータグフィルター（Nani風） */}
+            <div className="mb-6">
+              <label className="text-dads-sm font-semibold text-dads-text-primary mb-3 block">
+                📂 ファイル種別
+              </label>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => { setFilterType('all'); setCurrentPage(1); }}
+                  className={`category-tag ${filterType === 'all' ? 'active' : ''}`}
                 >
-                  <option value="all">すべて</option>
-                  <option value="image">画像</option>
-                  <option value="video">動画</option>
-                  <option value="other">その他</option>
-                </select>
+                  <span>📦</span>
+                  すべて
+                </button>
+                <button
+                  onClick={() => { setFilterType('image'); setCurrentPage(1); }}
+                  className={`category-tag ${filterType === 'image' ? 'active' : ''}`}
+                >
+                  <span>🖼️</span>
+                  画像
+                </button>
+                <button
+                  onClick={() => { setFilterType('video'); setCurrentPage(1); }}
+                  className={`category-tag ${filterType === 'video' ? 'active' : ''}`}
+                >
+                  <span>🎬</span>
+                  動画
+                </button>
+                <button
+                  onClick={() => { setFilterType('other'); setCurrentPage(1); }}
+                  className={`category-tag ${filterType === 'other' ? 'active' : ''}`}
+                >
+                  <span>📄</span>
+                  その他
+                </button>
               </div>
+            </div>
+
+            {/* その他のフィルター */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              {/* ファイル種別フィルター（旧版は削除） */}
 
               {/* タグフィルター */}
               <div>
@@ -1165,29 +1194,30 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
         {/* 一括操作ボタン */}
         {!loading && photos.length > 0 && selectedPhotoIds.length > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-dads-md p-4 mb-4 animate-fade-in">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div className="text-dads-sm font-medium text-dads-text-primary">
-                {selectedPhotoIds.length}件選択中
+          <div className="nani-card p-6 mb-6 animate-fade-in" style={{ background: 'linear-gradient(135deg, #E0F0FF 0%, #F0E8FF 100%)' }}>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="text-dads-base font-semibold text-dads-text-primary">
+                ✅ {selectedPhotoIds.length}件選択中
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
                   onClick={() => handleBulkRestore('Standard')}
-                  className="px-4 py-2 bg-dads-primary text-white rounded-dads-md hover:bg-dads-primary-hover transition-colors text-dads-sm font-medium"
+                  className="btn-pill btn-pill-primary text-dads-sm"
                 >
-                  選択ファイルを一括復元（12h）
+                  ⚡ 一括復元（12h）
                 </button>
                 <button
                   onClick={() => handleBulkRestore('Bulk')}
-                  className="px-4 py-2 border border-dads-primary text-dads-primary rounded-dads-md hover:bg-blue-50 transition-colors text-dads-sm font-medium"
+                  className="btn-pill btn-pill-secondary text-dads-sm"
                 >
-                  選択ファイルを一括復元（48h・低コスト）
+                  🐢 一括復元（48h・低コスト）
                 </button>
                 <button
                   onClick={() => setSelectedPhotoIds([])}
-                  className="px-4 py-2 border border-dads-border text-dads-text-secondary rounded-dads-md hover:bg-dads-bg-secondary transition-colors text-dads-sm"
+                  className="btn-pill px-4 py-2 bg-white border-2 border-dads-border text-dads-text-secondary hover:bg-dads-bg-secondary text-dads-sm"
+                  style={{ borderRadius: 'var(--dads-radius-pill)' }}
                 >
-                  選択解除
+                  ❌ 解除
                 </button>
               </div>
             </div>
@@ -1207,7 +1237,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
             <p className="text-dads-text-secondary">フィルター条件に一致するファイルがありません</p>
           </div>
         ) : (
-          <div className="bg-dads-bg-base rounded-dads-md shadow-dads-base border border-dads-border overflow-hidden">
+          <div className="nani-card overflow-hidden">
             {/* テーブル（デスクトップ） */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full table-fixed">
