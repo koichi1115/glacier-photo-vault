@@ -3,7 +3,7 @@
  * ドラッグ&ドロップでファイルアップロード
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 
 interface DragDropZoneProps {
   onFilesSelected: (files: File[]) => void;
@@ -12,12 +12,12 @@ interface DragDropZoneProps {
 
 export const DragDropZone: React.FC<DragDropZoneProps> = ({ onFilesSelected, children }) => {
   const [isDragging, setIsDragging] = useState(false);
-  const [dragCounter, setDragCounter] = useState(0);
+  const dragCounterRef = useRef(0);
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragCounter((prev) => prev + 1);
+    dragCounterRef.current += 1;
     if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
       setIsDragging(true);
     }
@@ -26,13 +26,10 @@ export const DragDropZone: React.FC<DragDropZoneProps> = ({ onFilesSelected, chi
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragCounter((prev) => {
-      const newCount = prev - 1;
-      if (newCount === 0) {
-        setIsDragging(false);
-      }
-      return newCount;
-    });
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -45,7 +42,7 @@ export const DragDropZone: React.FC<DragDropZoneProps> = ({ onFilesSelected, chi
       e.preventDefault();
       e.stopPropagation();
       setIsDragging(false);
-      setDragCounter(0);
+      dragCounterRef.current = 0;
 
       const files = Array.from(e.dataTransfer.files);
       if (files.length > 0) {
