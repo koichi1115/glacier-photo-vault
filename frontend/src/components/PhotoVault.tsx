@@ -7,6 +7,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Photo, PhotoStatus } from '@glacier-photo-vault/shared';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { api } from '../services/api';
+import { useToast } from '../hooks/useToast';
+import { ToastContainer } from './Toast';
+import { DragDropZone } from './DragDropZone';
+import { ScrollReveal } from './ScrollReveal';
+import { Confetti } from './Confetti';
 
 interface PhotoVaultProps {
   userId: string;
@@ -146,6 +151,10 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
   } | null>(null);
   const [uploadCancelled, setUploadCancelled] = useState(false);
   const [failedFiles, setFailedFiles] = useState<File[]>([]);
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  // Toast notifications
+  const { toasts, success, error, warning, info, removeToast } = useToast();
 
   useEffect(() => {
     loadPhotos();
@@ -356,23 +365,23 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
       // 結果メッセージの生成
       const wasCancelled = uploadCancelled;
-      let message = '';
       if (wasCancelled) {
-        message = `アップロードを中断しました\n\n成功: ${successCount}件\n未完了: ${filesToUpload.length - successCount - failCount}件\n失敗: ${failCount}件`;
+        warning(`アップロードを中断しました\n成功: ${successCount}件\n未完了: ${filesToUpload.length - successCount - failCount}件\n失敗: ${failCount}件`);
       } else if (filesToUpload.length === 1) {
-        message = successCount > 0
-          ? 'ファイルがGlacier Deep Archiveにアップロードされました！'
-          : `アップロードに失敗しました\n\nファイル: ${failedFileNames[0]}`;
+        if (successCount > 0) {
+          success('🎉 ファイルがGlacier Deep Archiveにアップロードされました！');
+          setShowConfetti(true);
+        } else {
+          error(`アップロードに失敗しました\nファイル: ${failedFileNames[0]}`);
+        }
       } else {
-        message = `アップロード完了\n\n成功: ${successCount}件\n失敗: ${failCount}件`;
-        if (failedFileNames.length > 0) {
-          message += '\n\n失敗したファイル:\n' + failedFileNames.slice(0, 10).join('\n');
-          if (failedFileNames.length > 10) {
-            message += `\n...他${failedFileNames.length - 10}件`;
-          }
+        if (failCount === 0) {
+          success(`🎉 ${successCount}件のファイルをアップロードしました！`);
+          setShowConfetti(true);
+        } else {
+          warning(`アップロード完了\n成功: ${successCount}件\n失敗: ${failCount}件`);
         }
       }
-      alert(message);
 
       // リトライでない場合のみクリア
       if (!retryFiles) {
@@ -390,7 +399,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
       loadMonthlyStats();
     } catch (error) {
       console.error('Upload error:', error);
-      alert('アップロードに失敗しました');
+      error('❌ アップロードに失敗しました');
     } finally {
       setUploading(false);
       setUploadProgress(null);
@@ -488,18 +497,18 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
     try {
       const data = await api.requestRestore(photoId, tier);
       if (data.success) {
-        alert(`復元リクエストを送信しました。推定完了時間: ${data.estimatedHours}時間`);
+        success(`✅ 復元リクエストを送信しました\n推定完了時間: ${data.estimatedHours}時間`);
         loadPhotos();
       }
     } catch (error) {
       console.error('Restore error:', error);
-      alert('復元リクエストに失敗しました');
+      error('❌ 復元リクエストに失敗しました');
     }
   };
 
   const handleBulkRestore = async (tier: 'Standard' | 'Bulk') => {
     if (selectedPhotoIds.length === 0) {
-      alert('復元するファイルを選択してください');
+      warning('復元するファイルを選択してください');
       return;
     }
 
@@ -508,6 +517,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
       return;
     }
 
+    info('⏳ 復元リクエストを処理中...');
     let successCount = 0;
     let failCount = 0;
 
@@ -525,7 +535,11 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
       }
     }
 
-    alert(`復元リクエスト完了\n成功: ${successCount}件、失敗: ${failCount}件`);
+    if (failCount === 0) {
+      success(`✅ ${successCount}件の復元リクエストが完了しました`);
+    } else {
+      warning(`復元リクエスト完了\n成功: ${successCount}件\n失敗: ${failCount}件`);
+    }
     setSelectedPhotoIds([]);
     loadPhotos();
   };
@@ -534,11 +548,12 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
     try {
       const data = await api.checkRestoreStatus(photoId);
       if (data.success) {
-        alert(`復元状態: ${data.status}`);
+        info(`復元状態: ${data.status}`);
         loadPhotos();
       }
     } catch (error) {
       console.error('Status check error:', error);
+      error('ステータスの確認に失敗しました');
     }
   };
 
@@ -546,13 +561,14 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
     try {
       const data = await api.getDownloadUrl(photoId);
       if (data.success) {
+        success('📥 ダウンロードを開始します');
         window.open(data.downloadUrl, '_blank');
       } else {
-        alert(data.error);
+        error(data.error || 'ダウンロードに失敗しました');
       }
     } catch (error) {
       console.error('Download error:', error);
-      alert('ダウンロードURLの取得に失敗しました');
+      error('❌ ダウンロードURLの取得に失敗しました');
     }
   };
 
@@ -619,12 +635,13 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-12">
-          {/* 総写真数 */}
-          <div
-            className="nani-card stat-card-hover p-6 sm:p-8 animate-fade-in cursor-pointer"
-            style={{ animationDelay: '0s' }}
-          >
+        <ScrollReveal direction="up" delay={0}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-12">
+            {/* 総写真数 */}
+            <div
+              className="nani-card stat-card-hover p-6 sm:p-8 animate-fade-in cursor-pointer"
+              style={{ animationDelay: '0s' }}
+            >
             <div className="flex items-center justify-between mb-2">
               <div className="text-dads-xs sm:text-dads-sm text-dads-text-secondary">総写真数</div>
               <div className="text-dads-text-secondary">
@@ -685,12 +702,14 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
             </div>
             <div className="text-xl sm:text-dads-2xl font-bold text-dads-text-primary">{stats.restored}</div>
           </div>
-        </div>
+          </div>
+        </ScrollReveal>
       )}
 
       {/* Monthly Storage Chart */}
       {!loading && monthlyStats.length > 0 && (
-        <div className="nani-card p-6 sm:p-8 mb-8 sm:mb-12 animate-fade-in">
+        <ScrollReveal direction="up" delay={50}>
+          <div className="nani-card p-6 sm:p-8 mb-8 sm:mb-12 animate-fade-in">
           <div className="flex items-center gap-3 mb-4 pb-3 border-b border-dads-border">
             <div className="w-10 h-10 bg-dads-primary/10 rounded-dads-md flex items-center justify-center text-dads-primary">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -749,19 +768,37 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
               <Bar dataKey="photoCount" fill="#64D8C6" name="photoCount" />
             </BarChart>
           </ResponsiveContainer>
-        </div>
+          </div>
+        </ScrollReveal>
       )}
 
       {/* Upload Form */}
-      <div className="nani-card p-6 sm:p-8 mb-8 sm:mb-12 animate-fade-in scroll-mt-24">
-        <div className="flex items-center gap-3 mb-4 pb-3 border-b border-dads-border">
-          <div className="w-10 h-10 bg-dads-primary/10 rounded-dads-md flex items-center justify-center text-dads-primary">
-            <UploadIcon />
-          </div>
-          <h2 className="text-dads-lg sm:text-dads-xl font-bold text-dads-text-primary">
-            写真をアップロード
-          </h2>
-        </div>
+      <ScrollReveal direction="up" delay={100}>
+        <DragDropZone onFilesSelected={(files) => {
+          setSelectedFiles(files);
+          setSelectedFile(null);
+          // Generate thumbnails
+          const newThumbnails: Record<string, string> = {};
+          files.forEach(async (file) => {
+            try {
+              const thumbnail = await generateThumbnail(file);
+              if (thumbnail) {
+                setThumbnails(prev => ({ ...prev, [file.name]: thumbnail }));
+              }
+            } catch (error) {
+              console.error('サムネイル生成エラー:', error);
+            }
+          });
+        }}>
+          <div className="nani-card p-6 sm:p-8 mb-8 sm:mb-12 animate-fade-in scroll-mt-24">
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-dads-border">
+              <div className="w-10 h-10 bg-dads-primary/10 rounded-dads-md flex items-center justify-center text-dads-primary">
+                <UploadIcon />
+              </div>
+              <h2 className="text-dads-lg sm:text-dads-xl font-bold text-dads-text-primary">
+                写真をアップロード
+              </h2>
+            </div>
 
         {/* ファイル/フォルダ選択ボタン */}
         <div className="flex gap-4 mb-6">
@@ -995,7 +1032,9 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
             </div>
           </div>
         )}
-      </div>
+          </div>
+        </DragDropZone>
+      </ScrollReveal>
 
       {/* Photo List */}
       <div className="scroll-mt-24">
@@ -1527,6 +1566,12 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
           </div>
         )}
       </div>
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+
+      {/* Confetti Animation */}
+      <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
     </div>
   );
 };
