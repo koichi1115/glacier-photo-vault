@@ -2,43 +2,51 @@
 @tailwind components;
 @tailwind utilities;
 
-/* DADSカスタムプロパティ */
+/* DADSカスタムプロパティ - Nani inspired */
 :root {
-  /* カラー */
-  --dads-primary: #0066CC;
-  --dads-primary-hover: #0052A3;
-  --dads-primary-active: #003D7A;
+  /* カラー - nani風のソフトなカラーパレット */
+  --dads-primary: #3B9EF5;
+  --dads-primary-hover: #2A8EE5;
+  --dads-primary-active: #1A7ED5;
   --dads-success: #00703C;
   --dads-warning: #FF6B00;
   --dads-danger: #D93F00;
-  --dads-info: #0066CC;
+  --dads-info: #3B9EF5;
 
   /* テキスト */
   --dads-text-primary: #1A1A1A;
   --dads-text-secondary: #5F5F5F;
   --dads-text-tertiary: #8C8C8C;
 
-  /* 背景 */
+  /* 背景 - グラデーション対応 */
   --dads-bg-base: #FFFFFF;
-  --dads-bg-secondary: #F7F7F7;
-  --dads-bg-tertiary: #EEEEEE;
+  --dads-bg-secondary: #F0F4FA;
+  --dads-bg-tertiary: #E8EEF7;
+
+  /* グラデーション背景色 */
+  --gradient-start: #E0F0FF;
+  --gradient-mid: #F0E8FF;
+  --gradient-end: #FFE8F5;
 
   /* ボーダー */
-  --dads-border: #D6D6D6;
-  --dads-border-focus: #0066CC;
+  --dads-border: #E0E6ED;
+  --dads-border-focus: #3B9EF5;
 
-  /* シャドウ */
-  --dads-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --dads-shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --dads-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  /* シャドウ - より柔らかく、フローティング感を強調 */
+  --dads-shadow-sm: 0 2px 8px rgba(59, 158, 245, 0.08);
+  --dads-shadow-base: 0 4px 16px rgba(59, 158, 245, 0.12);
+  --dads-shadow-md: 0 8px 24px rgba(59, 158, 245, 0.16);
+  --dads-shadow-lg: 0 12px 32px rgba(59, 158, 245, 0.2);
 
-  /* スペーシング（8pxグリッド） */
+  /* スペーシング（8pxグリッド） - より大きな余白 */
   --dads-space-1: 8px;
   --dads-space-2: 16px;
   --dads-space-3: 24px;
   --dads-space-4: 32px;
   --dads-space-5: 40px;
   --dads-space-6: 48px;
+  --dads-space-7: 56px;
+  --dads-space-8: 64px;
 
   /* タイポグラフィ */
   --dads-font-family: "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans", "Noto Sans CJK JP", "Original Yu Gothic", "Yu Gothic", sans-serif;
@@ -51,20 +59,23 @@
   --dads-font-size-3xl: 32px;
   --dads-font-size-4xl: 40px;
 
-  /* 角丸 */
-  --dads-radius-sm: 4px;
-  --dads-radius-md: 8px;
-  --dads-radius-lg: 12px;
+  /* 角丸 - より大きな丸みでnani風に */
+  --dads-radius-sm: 8px;
+  --dads-radius-md: 16px;
+  --dads-radius-lg: 24px;
+  --dads-radius-xl: 32px;
+  --dads-radius-pill: 999px;
 }
 
 @layer base {
-  /* DADSベーススタイル */
+  /* DADSベーススタイル - Nani inspired */
   html {
     font-family: var(--dads-font-family);
     font-size: 16px;
     line-height: 1.5;
     color: var(--dads-text-primary);
-    background-color: var(--dads-bg-secondary);
+    background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-mid) 50%, var(--gradient-end) 100%);
+    background-attachment: fixed;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -72,6 +83,7 @@
   body {
     margin: 0;
     padding: 0;
+    background: transparent;
   }
 
   /* アクセシビリティ: フォーカスリング */
@@ -97,26 +109,26 @@
   overflow: hidden;
 }
 
-/* カードホバーエフェクト */
+/* カードホバーエフェクト - Nani inspired floating effect */
 @layer components {
   .card-hover {
-    transition: all 0.2s ease-in-out;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    transform: translateY(-4px);
+    box-shadow: var(--dads-shadow-lg);
     border-color: var(--dads-primary);
   }
 
-  /* 統計カードのホバーエフェクト */
+  /* 統計カードのホバーエフェクト - より柔らかく */
   .stat-card-hover {
-    transition: all 0.2s ease-in-out;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .stat-card-hover:hover {
-    transform: scale(1.02);
-    box-shadow: 0 8px 16px -4px rgba(0, 102, 204, 0.15);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: var(--dads-shadow-lg);
     border-color: var(--dads-primary);
   }
 
@@ -193,5 +205,103 @@
   .button-ripple:active::after {
     width: 300px;
     height: 300px;
+  }
+
+  /* Pill形状のボタン - Nani風 */
+  .btn-pill {
+    border-radius: var(--dads-radius-pill);
+    padding: 12px 24px;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-pill-primary {
+    background: var(--dads-primary);
+    color: white;
+    border: none;
+    box-shadow: var(--dads-shadow-sm);
+  }
+
+  .btn-pill-primary:hover {
+    background: var(--dads-primary-hover);
+    box-shadow: var(--dads-shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .btn-pill-secondary {
+    background: white;
+    color: var(--dads-primary);
+    border: 2px solid var(--dads-primary);
+    box-shadow: var(--dads-shadow-sm);
+  }
+
+  .btn-pill-secondary:hover {
+    background: var(--gradient-start);
+    box-shadow: var(--dads-shadow-md);
+    transform: translateY(-2px);
+  }
+
+  /* カテゴリータグボタン - Nani風 */
+  .category-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: white;
+    border: 2px solid var(--dads-border);
+    border-radius: var(--dads-radius-pill);
+    font-size: var(--dads-font-size-sm);
+    font-weight: 500;
+    color: var(--dads-text-primary);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    box-shadow: var(--dads-shadow-sm);
+  }
+
+  .category-tag:hover {
+    background: var(--gradient-start);
+    border-color: var(--dads-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--dads-shadow-md);
+  }
+
+  .category-tag.active {
+    background: var(--dads-primary);
+    color: white;
+    border-color: var(--dads-primary);
+  }
+
+  /* カード - より丸みと柔らかいシャドウ */
+  .nani-card {
+    background: white;
+    border-radius: var(--dads-radius-lg);
+    box-shadow: var(--dads-shadow-base);
+    border: 1px solid rgba(59, 158, 245, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .nani-card:hover {
+    box-shadow: var(--dads-shadow-lg);
+    transform: translateY(-4px);
+  }
+
+  /* グラデーションアクセント */
+  .gradient-accent {
+    background: linear-gradient(135deg, #3B9EF5 0%, #A78BFA 100%);
+  }
+
+  /* 手書き風矢印のアニメーション */
+  @keyframes draw-arrow {
+    0% {
+      stroke-dashoffset: 100;
+    }
+    100% {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  .handdrawn-arrow {
+    animation: draw-arrow 1s ease-out forwards;
+    stroke-dasharray: 100;
   }
 }
