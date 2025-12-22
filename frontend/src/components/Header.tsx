@@ -19,22 +19,24 @@ export const Header: React.FC<HeaderProps> = ({ userName = 'demo-user', displayN
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex justify-between items-center gap-2">
           {/* ロゴ */}
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-dads-lg flex items-center justify-center flex-shrink-0" style={{
               background: 'linear-gradient(135deg, rgba(59, 158, 245, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%)',
               boxShadow: 'var(--dads-shadow-sm)'
             }}>
               <GlacierLogo size={40} variant="gradient" />
             </div>
-            <div className="min-w-0">
-              <h1 className="text-base sm:text-xl font-extrabold text-dads-text-primary tracking-tight truncate" style={{
+            <div className="min-w-0 flex-1">
+              <h1 className="text-sm sm:text-base md:text-xl font-extrabold text-dads-text-primary tracking-tight whitespace-nowrap overflow-hidden text-ellipsis" style={{
                 fontFamily: "'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-                letterSpacing: '-0.02em'
+                letterSpacing: '-0.02em',
+                maxWidth: '100%'
               }}>
                 Glacier Photo Vault
               </h1>
-              <p className="text-xs sm:text-sm font-semibold text-dads-text-secondary mt-0.5 truncate" style={{
-                fontFamily: "'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+              <p className="text-xs sm:text-sm font-semibold text-dads-text-secondary mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis hidden xs:block" style={{
+                fontFamily: "'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                maxWidth: '100%'
               }}>
                 超低コスト写真保管サービス
               </p>
