@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/backend/src/index.js"
+    "start": "node dist/backend/src/index.js",
+    "batch:daily": "tsx src/scripts/dailyUsageBatch.ts",
+    "batch:monthly": "tsx src/scripts/monthlyBillingBatch.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.0",
