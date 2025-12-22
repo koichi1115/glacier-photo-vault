@@ -1,6 +1,6 @@
 /**
  * Glacier Photo Vault Logo Component
- * 写真と氷河を組み合わせたオリジナルアイコン
+ * セキュアクラウドボルト - 金庫とクラウドを組み合わせたデザイン
  */
 
 import React from 'react';
@@ -16,7 +16,8 @@ export const GlacierLogo: React.FC<LogoProps> = ({
   className = '',
   variant = 'gradient'
 }) => {
-  const gradientId = `glacier-gradient-${Math.random().toString(36).substr(2, 9)}`;
+  const gradientId = `vault-gradient-${Math.random().toString(36).substr(2, 9)}`;
+  const cloudGradientId = `cloud-gradient-${Math.random().toString(36).substr(2, 9)}`;
 
   return (
     <svg
@@ -31,8 +32,12 @@ export const GlacierLogo: React.FC<LogoProps> = ({
         {variant === 'gradient' && (
           <>
             <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#1E3A8A" />
+              <stop offset="50%" stopColor="#3B82F6" />
+              <stop offset="100%" stopColor="#60A5FA" />
+            </linearGradient>
+            <linearGradient id={cloudGradientId} x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#3B9EF5" />
-              <stop offset="50%" stopColor="#7B68EE" />
               <stop offset="100%" stopColor="#A78BFA" />
             </linearGradient>
             <filter id="glow">
@@ -46,83 +51,85 @@ export const GlacierLogo: React.FC<LogoProps> = ({
         )}
       </defs>
 
-      {/* 背景の氷河（六角形） */}
-      <path
-        d="M32 4 L50 14 L50 34 L32 44 L14 34 L14 14 Z"
-        fill={variant === 'gradient' ? `url(#${gradientId})` : variant === 'white' ? 'white' : '#3B9EF5'}
-        opacity="0.15"
-        className="logo-bg"
-      />
-
-      {/* 氷河の結晶パターン */}
-      <g opacity="0.3">
-        <path
-          d="M32 12 L38 16 L38 24 L32 28 L26 24 L26 16 Z"
-          stroke={variant === 'white' ? 'white' : '#3B9EF5'}
-          strokeWidth="1"
-          fill="none"
-        />
-        <path
-          d="M32 32 L42 38 L42 50 L32 56 L22 50 L22 38 Z"
-          stroke={variant === 'white' ? 'white' : '#3B9EF5'}
-          strokeWidth="1"
-          fill="none"
-        />
+      {/* クラウドの背景 */}
+      <g opacity="0.2">
+        <ellipse cx="32" cy="18" rx="20" ry="12" fill={variant === 'gradient' ? `url(#${cloudGradientId})` : variant === 'white' ? 'white' : '#3B9EF5'} />
+        <ellipse cx="24" cy="16" rx="10" ry="8" fill={variant === 'gradient' ? `url(#${cloudGradientId})` : variant === 'white' ? 'white' : '#3B9EF5'} />
+        <ellipse cx="40" cy="16" rx="10" ry="8" fill={variant === 'gradient' ? `url(#${cloudGradientId})` : variant === 'white' ? 'white' : '#3B9EF5'} />
       </g>
 
-      {/* メインのカメラアイコン */}
-      <g transform="translate(18, 20)">
-        {/* カメラボディ */}
+      {/* 金庫本体 */}
+      <g transform="translate(16, 24)">
+        {/* 金庫の外枠 */}
         <rect
-          x="2"
-          y="6"
-          width="24"
-          height="16"
-          rx="3"
-          fill={variant === 'gradient' ? `url(#${gradientId})` : variant === 'white' ? 'white' : '#3B9EF5'}
+          x="0"
+          y="0"
+          width="32"
+          height="32"
+          rx="4"
+          fill={variant === 'gradient' ? `url(#${gradientId})` : variant === 'white' ? 'white' : '#1E3A8A'}
           filter={variant === 'gradient' ? 'url(#glow)' : undefined}
         />
 
-        {/* カメラレンズ */}
-        <circle
-          cx="14"
-          cy="14"
-          r="6"
-          fill={variant === 'white' ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.9)'}
-        />
-        <circle
-          cx="14"
-          cy="14"
-          r="4"
-          fill={variant === 'white' ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.6)'}
-        />
-
-        {/* フラッシュ */}
+        {/* 金庫のドア（内側） */}
         <rect
-          x="4"
+          x="2"
           y="2"
-          width="6"
-          height="4"
-          rx="1"
-          fill={variant === 'gradient' ? `url(#${gradientId})` : variant === 'white' ? 'white' : '#3B9EF5'}
-          opacity="0.8"
+          width="28"
+          height="28"
+          rx="3"
+          fill={variant === 'white' ? 'rgba(255,255,255,0.2)' : '#2563EB'}
         />
 
-        {/* シャッターボタン */}
-        <circle
-          cx="22"
-          cy="4"
-          r="1.5"
-          fill={variant === 'white' ? 'white' : '#FF6B6B'}
-        />
+        {/* ハンドル部分 */}
+        <g transform="translate(16, 16)">
+          {/* ハンドルの円盤 */}
+          <circle
+            cx="0"
+            cy="0"
+            r="8"
+            fill={variant === 'white' ? 'rgba(255,255,255,0.4)' : '#60A5FA'}
+            stroke={variant === 'white' ? 'white' : '#DBEAFE'}
+            strokeWidth="1.5"
+          />
+
+          {/* 内側の円 */}
+          <circle
+            cx="0"
+            cy="0"
+            r="5"
+            fill="none"
+            stroke={variant === 'white' ? 'white' : '#DBEAFE'}
+            strokeWidth="1"
+          />
+
+          {/* セキュリティマーク（中央の点） */}
+          <circle
+            cx="0"
+            cy="0"
+            r="1.5"
+            fill={variant === 'white' ? 'white' : '#FCD34D'}
+          />
+
+          {/* ダイヤルのマーカー（12時、3時、6時、9時の位置） */}
+          <circle cx="0" cy="-6" r="1" fill={variant === 'white' ? 'white' : '#DBEAFE'} />
+          <circle cx="6" cy="0" r="1" fill={variant === 'white' ? 'white' : '#DBEAFE'} />
+          <circle cx="0" cy="6" r="1" fill={variant === 'white' ? 'white' : '#DBEAFE'} />
+          <circle cx="-6" cy="0" r="1" fill={variant === 'white' ? 'white' : '#DBEAFE'} />
+        </g>
+
+        {/* ヒンジ（左側の点） */}
+        <circle cx="4" cy="8" r="1.5" fill={variant === 'white' ? 'white' : '#94A3B8'} />
+        <circle cx="4" cy="16" r="1.5" fill={variant === 'white' ? 'white' : '#94A3B8'} />
+        <circle cx="4" cy="24" r="1.5" fill={variant === 'white' ? 'white' : '#94A3B8'} />
       </g>
 
-      {/* 氷のキラキラエフェクト */}
+      {/* セキュリティキラキラエフェクト */}
       <g opacity="0.6">
-        <circle cx="12" cy="12" r="1.5" fill={variant === 'white' ? 'white' : '#E0F0FF'} />
-        <circle cx="52" cy="20" r="1" fill={variant === 'white' ? 'white' : '#E0F0FF'} />
-        <circle cx="48" cy="52" r="1.5" fill={variant === 'white' ? 'white' : '#E0F0FF'} />
-        <circle cx="16" cy="52" r="1" fill={variant === 'white' ? 'white' : '#E0F0FF'} />
+        <circle cx="14" cy="10" r="1" fill={variant === 'white' ? 'white' : '#FCD34D'} />
+        <circle cx="50" cy="14" r="1.5" fill={variant === 'white' ? 'white' : '#FCD34D'} />
+        <circle cx="10" cy="58" r="1" fill={variant === 'white' ? 'white' : '#60A5FA'} />
+        <circle cx="54" cy="54" r="1.5" fill={variant === 'white' ? 'white' : '#60A5FA'} />
       </g>
     </svg>
   );
@@ -139,24 +146,25 @@ export const GlacierLogoSimple: React.FC<{ size?: number }> = ({ size = 32 }) =>
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
-        <linearGradient id="simple-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#3B9EF5" />
-          <stop offset="100%" stopColor="#A78BFA" />
+        <linearGradient id="simple-vault-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#1E3A8A" />
+          <stop offset="100%" stopColor="#60A5FA" />
         </linearGradient>
       </defs>
 
-      {/* 六角形の背景 */}
-      <path
-        d="M16 2 L28 9 L28 23 L16 30 L4 23 L4 9 Z"
-        fill="url(#simple-gradient)"
-      />
+      {/* クラウドの背景（シンプル版） */}
+      <ellipse cx="16" cy="8" rx="12" ry="6" fill="#3B9EF5" opacity="0.2" />
 
-      {/* カメラアイコン（シンプル版） */}
-      <g transform="translate(8, 10)">
-        <rect x="1" y="3" width="14" height="9" rx="1.5" fill="white" opacity="0.9" />
-        <circle cx="8" cy="7.5" r="3" fill="#3B9EF5" opacity="0.5" />
-        <rect x="2" y="1" width="4" height="2" rx="0.5" fill="white" opacity="0.7" />
-      </g>
+      {/* 金庫本体（シンプル版） */}
+      <rect x="6" y="12" width="20" height="18" rx="2" fill="url(#simple-vault-gradient)" />
+
+      {/* 内側のドア */}
+      <rect x="7" y="13" width="18" height="16" rx="1.5" fill="#2563EB" />
+
+      {/* ハンドル */}
+      <circle cx="16" cy="21" r="5" fill="#60A5FA" stroke="#DBEAFE" strokeWidth="1" />
+      <circle cx="16" cy="21" r="3" fill="none" stroke="#DBEAFE" strokeWidth="0.8" />
+      <circle cx="16" cy="21" r="1" fill="#FCD34D" />
     </svg>
   );
 };
