@@ -664,11 +664,11 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
             </div>
             <div className="text-lg sm:text-xl md:text-dads-2xl font-bold text-dads-text-primary mb-2">{formatBytes(stats.totalSize)}</div>
             <div className="text-xs text-dads-text-secondary space-y-0.5">
-              <div className="flex justify-between gap-2">
+              <div className="flex items-center gap-3">
                 <span className="whitespace-nowrap">復元コスト（12h）:</span>
                 <span className="font-semibold text-dads-warning whitespace-nowrap">{calculateRestoreCost(stats.totalSize, 'standard')}</span>
               </div>
-              <div className="flex justify-between gap-2">
+              <div className="flex items-center gap-3">
                 <span className="whitespace-nowrap">復元コスト（48h）:</span>
                 <span className="font-semibold text-dads-success whitespace-nowrap">{calculateRestoreCost(stats.totalSize, 'bulk')}</span>
               </div>
