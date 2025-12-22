@@ -3,6 +3,7 @@ import { Header } from './components/Header';
 import { PhotoVault } from './components/PhotoVault';
 import { Login } from './components/Login';
 import { AuthCallback } from './components/AuthCallback';
+import { BillingPage } from './pages/BillingPage';
 import { api, User } from './services/api';
 import './App.css';
 
@@ -13,9 +14,11 @@ function App() {
 
   useEffect(() => {
     const checkAuth = async () => {
+      // Set path based on URL
+      setPath(window.location.pathname);
+
       // Check for callback route
       if (window.location.pathname.startsWith('/auth/callback')) {
-        setPath('/auth/callback');
         setLoading(false);
         return;
       }
@@ -34,6 +37,14 @@ function App() {
     };
 
     checkAuth();
+
+    // Listen for navigation events
+    const handlePopState = () => {
+      setPath(window.location.pathname);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   if (loading) {
@@ -54,13 +65,37 @@ function App() {
     return <Login />;
   }
 
-  // Route: Main App
+  // Navigation helper
+  const navigate = (newPath: string) => {
+    window.history.pushState({}, '', newPath);
+    setPath(newPath);
+  };
+
+  // Route: Billing Page
+  if (path === '/billing') {
+    return (
+      <div className="app">
+        <Header
+          userName={user.email.split('@')[0] || 'User'}
+          displayName={user.displayName}
+          profilePhoto={user.profilePhoto}
+          onNavigate={navigate}
+        />
+        <main className="flex-1 overflow-y-auto">
+          <BillingPage />
+        </main>
+      </div>
+    );
+  }
+
+  // Route: Main App (Photo Vault)
   return (
     <div className="app">
       <Header
         userName={user.email.split('@')[0] || 'User'}
         displayName={user.displayName}
         profilePhoto={user.profilePhoto}
+        onNavigate={navigate}
       />
       <main className="flex-1 overflow-y-auto">
         <PhotoVault userId={user.userId} />

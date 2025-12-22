@@ -10,10 +10,18 @@ interface HeaderProps {
   userName?: string;
   displayName?: string;
   profilePhoto?: string;
+  onNavigate?: (path: string) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ userName = 'demo-user', displayName, profilePhoto }) => {
+export const Header: React.FC<HeaderProps> = ({ userName = 'demo-user', displayName, profilePhoto, onNavigate }) => {
   const displayedName = displayName || userName;
+
+  const handleNavigation = (path: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onNavigate) {
+      onNavigate(path);
+    }
+  };
   return (
     <header className="bg-white/80 backdrop-blur-md border-b border-dads-border sticky top-0 z-50" style={{ boxShadow: 'var(--dads-shadow-sm)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
@@ -46,22 +54,24 @@ export const Header: React.FC<HeaderProps> = ({ userName = 'demo-user', displayN
           {/* ナビゲーション */}
           <nav className="hidden md:flex items-center gap-6">
             <a
-              href="#"
+              href="/"
+              onClick={handleNavigation('/')}
               className="text-dads-sm text-dads-text-primary hover:text-dads-primary transition-colors font-medium"
             >
               ダッシュボード
             </a>
             <a
-              href="#"
+              href="/billing"
+              onClick={handleNavigation('/billing')}
+              className="text-dads-sm text-dads-text-secondary hover:text-dads-primary transition-colors"
+            >
+              課金・使用量
+            </a>
+            <a
+              href="#help"
               className="text-dads-sm text-dads-text-secondary hover:text-dads-primary transition-colors"
             >
               使い方
-            </a>
-            <a
-              href="#"
-              className="text-dads-sm text-dads-text-secondary hover:text-dads-primary transition-colors"
-            >
-              料金
             </a>
           </nav>
 
