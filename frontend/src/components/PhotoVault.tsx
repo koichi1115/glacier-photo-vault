@@ -70,47 +70,47 @@ const SkeletonCard = () => (
 
 // 空の状態コンポーネント
 const EmptyState = () => (
-  <div className="nani-card p-16 text-center animate-fade-in">
-    <div className="flex justify-center mb-8">
-      <div className="w-32 h-32 rounded-full flex items-center justify-center animate-pulse-slow" style={{ background: 'linear-gradient(135deg, #E0F0FF 0%, #F0E8FF 100%)' }}>
-        <div className="w-20 h-20 text-dads-primary">
+  <div className="nani-card p-8 sm:p-12 md:p-16 text-center animate-fade-in">
+    <div className="flex justify-center mb-6 sm:mb-8">
+      <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full flex items-center justify-center animate-pulse-slow" style={{ background: 'linear-gradient(135deg, #E0F0FF 0%, #F0E8FF 100%)' }}>
+        <div className="w-16 h-16 sm:w-20 sm:h-20 text-dads-primary">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </div>
       </div>
     </div>
-    <h3 className="text-dads-2xl font-bold text-dads-text-primary mb-3">
+    <h3 className="text-lg sm:text-xl md:text-dads-2xl font-bold text-dads-text-primary mb-3">
       📸 写真がまだありません
     </h3>
-    <p className="text-dads-base text-dads-text-secondary mb-8 max-w-xl mx-auto">
-      上のフォームから写真をアップロードして、<br />
+    <p className="text-sm sm:text-base text-dads-text-secondary mb-6 sm:mb-8 max-w-xl mx-auto px-4">
+      上のフォームから写真をアップロードして、<br className="hidden sm:inline" />
       超低コストのGlacier Deep Archiveで長期保管を始めましょう
     </p>
-    <div className="flex items-center justify-center gap-12 text-dads-base text-dads-text-secondary flex-wrap">
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-          <svg className="w-5 h-5 text-dads-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="flex items-center justify-center gap-6 sm:gap-8 md:gap-12 text-sm sm:text-base text-dads-text-secondary flex-wrap">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-dads-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <span>無料アップロード</span>
+        <span className="whitespace-nowrap">無料アップロード</span>
       </div>
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-          <svg className="w-5 h-5 text-dads-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-dads-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <span>超低コスト</span>
+        <span className="whitespace-nowrap">超低コスト</span>
       </div>
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-          <svg className="w-5 h-5 text-dads-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-dads-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <span>99.999999999%耐久性</span>
+        <span className="whitespace-nowrap text-xs sm:text-sm md:text-base">99.999999999%耐久性</span>
       </div>
     </div>
   </div>
@@ -639,68 +639,68 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-12">
             {/* 総写真数 */}
             <div
-              className="nani-card stat-card-hover p-6 sm:p-8 animate-fade-in cursor-pointer"
+              className="nani-card stat-card-hover p-4 sm:p-6 md:p-8 animate-fade-in cursor-pointer"
               style={{ animationDelay: '0s' }}
             >
             <div className="flex items-center justify-between mb-2">
-              <div className="text-dads-xs sm:text-dads-sm text-dads-text-secondary">総写真数</div>
+              <div className="text-xs sm:text-dads-sm text-dads-text-secondary whitespace-nowrap">総写真数</div>
               <div className="text-dads-text-secondary">
                 <PhotoIcon />
               </div>
             </div>
-            <div className="text-xl sm:text-dads-2xl font-bold text-dads-text-primary">{stats.totalPhotos}</div>
+            <div className="text-lg sm:text-xl md:text-dads-2xl font-bold text-dads-text-primary">{stats.totalPhotos}</div>
           </div>
 
           {/* 総容量（復元コスト付き） */}
           <div
-            className="nani-card stat-card-hover p-6 sm:p-8 animate-fade-in cursor-pointer"
+            className="nani-card stat-card-hover p-4 sm:p-6 md:p-8 animate-fade-in cursor-pointer"
             style={{ animationDelay: '0.1s' }}
           >
             <div className="flex items-center justify-between mb-2">
-              <div className="text-dads-xs sm:text-dads-sm text-dads-text-secondary">総容量</div>
+              <div className="text-xs sm:text-dads-sm text-dads-text-secondary whitespace-nowrap">総容量</div>
               <div className="text-dads-text-secondary">
                 <FileIcon />
               </div>
             </div>
-            <div className="text-xl sm:text-dads-2xl font-bold text-dads-text-primary mb-2">{formatBytes(stats.totalSize)}</div>
-            <div className="text-dads-xs text-dads-text-secondary space-y-0.5">
-              <div className="flex justify-between">
-                <span>復元コスト（12h）:</span>
-                <span className="font-semibold text-dads-warning">{calculateRestoreCost(stats.totalSize, 'standard')}</span>
+            <div className="text-lg sm:text-xl md:text-dads-2xl font-bold text-dads-text-primary mb-2">{formatBytes(stats.totalSize)}</div>
+            <div className="text-xs text-dads-text-secondary space-y-0.5">
+              <div className="flex justify-between gap-2">
+                <span className="whitespace-nowrap">復元コスト（12h）:</span>
+                <span className="font-semibold text-dads-warning whitespace-nowrap">{calculateRestoreCost(stats.totalSize, 'standard')}</span>
               </div>
-              <div className="flex justify-between">
-                <span>復元コスト（48h）:</span>
-                <span className="font-semibold text-dads-success">{calculateRestoreCost(stats.totalSize, 'bulk')}</span>
+              <div className="flex justify-between gap-2">
+                <span className="whitespace-nowrap">復元コスト（48h）:</span>
+                <span className="font-semibold text-dads-success whitespace-nowrap">{calculateRestoreCost(stats.totalSize, 'bulk')}</span>
               </div>
             </div>
           </div>
 
           {/* アーカイブ済み */}
           <div
-            className="nani-card stat-card-hover p-6 sm:p-8 animate-fade-in cursor-pointer"
+            className="nani-card stat-card-hover p-4 sm:p-6 md:p-8 animate-fade-in cursor-pointer"
             style={{ animationDelay: '0.2s' }}
           >
             <div className="flex items-center justify-between mb-2">
-              <div className="text-dads-xs sm:text-dads-sm text-dads-text-secondary">アーカイブ済み</div>
+              <div className="text-xs sm:text-dads-sm text-dads-text-secondary whitespace-nowrap">アーカイブ済み</div>
               <div className="text-dads-text-secondary">
                 <FileIcon />
               </div>
             </div>
-            <div className="text-xl sm:text-dads-2xl font-bold text-dads-text-primary">{stats.archived}</div>
+            <div className="text-lg sm:text-xl md:text-dads-2xl font-bold text-dads-text-primary">{stats.archived}</div>
           </div>
 
           {/* 復元可能 */}
           <div
-            className="nani-card stat-card-hover p-6 sm:p-8 animate-fade-in cursor-pointer"
+            className="nani-card stat-card-hover p-4 sm:p-6 md:p-8 animate-fade-in cursor-pointer"
             style={{ animationDelay: '0.3s' }}
           >
             <div className="flex items-center justify-between mb-2">
-              <div className="text-dads-xs sm:text-dads-sm text-dads-text-secondary">復元可能</div>
+              <div className="text-xs sm:text-dads-sm text-dads-text-secondary whitespace-nowrap">復元可能</div>
               <div className="text-dads-text-secondary">
                 <FileIcon />
               </div>
             </div>
-            <div className="text-xl sm:text-dads-2xl font-bold text-dads-text-primary">{stats.restored}</div>
+            <div className="text-lg sm:text-xl md:text-dads-2xl font-bold text-dads-text-primary">{stats.restored}</div>
           </div>
           </div>
         </ScrollReveal>
@@ -709,18 +709,20 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
       {/* Monthly Storage Chart */}
       {!loading && monthlyStats.length > 0 && (
         <ScrollReveal direction="up" delay={50}>
-          <div className="nani-card p-6 sm:p-8 mb-8 sm:mb-12 animate-fade-in">
-          <div className="flex items-center gap-3 mb-4 pb-3 border-b border-dads-border">
-            <div className="w-10 h-10 bg-dads-primary/10 rounded-dads-md flex items-center justify-center text-dads-primary">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="nani-card p-4 sm:p-6 md:p-8 mb-8 sm:mb-12 animate-fade-in">
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 pb-3 border-b border-dads-border">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-dads-primary/10 rounded-dads-md flex items-center justify-center text-dads-primary flex-shrink-0">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
-            <h2 className="text-dads-lg sm:text-dads-xl font-bold text-dads-text-primary">
+            <h2 className="text-base sm:text-dads-lg md:text-dads-xl font-bold text-dads-text-primary">
               月別保存容量
             </h2>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
+          <div className="w-full overflow-x-auto">
+            <div className="min-w-[300px]">
+              <ResponsiveContainer width="100%" height={250}>
             <BarChart
               data={monthlyStats.map(stat => ({
                 ...stat,
@@ -767,7 +769,9 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
               <Bar dataKey="sizeInMB" fill="#0969da" name="sizeInMB" />
               <Bar dataKey="photoCount" fill="#64D8C6" name="photoCount" />
             </BarChart>
-          </ResponsiveContainer>
+              </ResponsiveContainer>
+            </div>
+          </div>
           </div>
         </ScrollReveal>
       )}
