@@ -3,7 +3,6 @@ import { Header } from './components/Header';
 import { PhotoVault } from './components/PhotoVault';
 import { Login } from './components/Login';
 import { AuthCallback } from './components/AuthCallback';
-import { BillingPage } from './pages/BillingPage';
 import { api, User } from './services/api';
 import './App.css';
 
@@ -71,22 +70,6 @@ function App() {
     setPath(newPath);
   };
 
-  // Route: Billing Page
-  if (path === '/billing') {
-    return (
-      <div className="app">
-        <Header
-          userName={user.email.split('@')[0] || 'User'}
-          displayName={user.displayName}
-          profilePhoto={user.profilePhoto}
-          onNavigate={navigate}
-        />
-        <main className="flex-1 overflow-y-auto">
-          <BillingPage />
-        </main>
-      </div>
-    );
-  }
 
   // Route: Main App (Photo Vault)
   return (
