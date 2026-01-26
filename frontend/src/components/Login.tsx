@@ -1,5 +1,4 @@
 import React from 'react';
-import { GlacierLogo } from './Logo';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -13,9 +12,8 @@ export const Login: React.FC = () => {
             <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
                 <div className="mb-8">
                     {/* 新しい金庫アイコン */}
-                    <div className="w-28 h-28 mx-auto rounded-2xl shadow-xl mb-6 bg-gradient-to-br from-blue-900 via-blue-600 to-blue-400 flex items-center justify-center relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-purple-400/20"></div>
-                        <GlacierLogo size={72} variant="white" />
+                    <div className="w-28 h-28 mx-auto rounded-2xl shadow-xl mb-6 flex items-center justify-center overflow-hidden">
+                        <img src="/favicon.png" alt="Glacier Photo Vault" className="w-full h-full object-cover rounded-2xl" />
                     </div>
                     <h1 className="text-3xl font-bold text-gray-800 mb-2" style={{
                         fontFamily: "'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",

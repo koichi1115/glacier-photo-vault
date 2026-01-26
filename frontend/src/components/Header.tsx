@@ -4,7 +4,6 @@
  */
 
 import React from 'react';
-import { GlacierLogo } from './Logo';
 
 interface HeaderProps {
   userName?: string;
@@ -32,7 +31,7 @@ export const Header: React.FC<HeaderProps> = ({ userName = 'demo-user', displayN
               background: 'linear-gradient(135deg, rgba(59, 158, 245, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%)',
               boxShadow: 'var(--dads-shadow-sm)'
             }}>
-              <GlacierLogo size={40} variant="gradient" />
+              <img src="/favicon.png" alt="Glacier Photo Vault" className="w-10 h-10 object-contain" />
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="text-sm sm:text-base md:text-xl font-extrabold text-dads-text-primary tracking-tight whitespace-nowrap overflow-hidden text-ellipsis" style={{
