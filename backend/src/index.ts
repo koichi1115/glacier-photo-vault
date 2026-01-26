@@ -12,7 +12,6 @@ import passport from './config/passport';
 import { SessionManager } from './services/SessionManager';
 import { setupSocketHandlers } from './socket/handlers';
 import photoRoutes from './routes/photoRoutes';
-import billingRoutes from './routes/billing';
 import authRoutes from './routes/authRoutes';
 import { initDb } from './db';
 
@@ -140,8 +139,6 @@ app.use('/api/auth', authLimiter, authRoutes);
 // 写真ストレージルート（アップロード専用レート制限）
 app.use('/api/photos', uploadLimiter, photoRoutes);
 
-// 課金・支払いルート
-app.use('/api/billing', billingRoutes);
 
 // Initialize session manager
 const sessionManager = new SessionManager();
