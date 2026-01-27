@@ -1494,42 +1494,40 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
                         <span>•</span>
                         <span>{new Date(photo.uploadedAt).toLocaleDateString('ja-JP')}</span>
                       </div>
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap items-center gap-2">
                         <StatusBadge status={photo.status} />
-                        <div className="flex gap-2">
-                          {photo.status === PhotoStatus.ARCHIVED && (
-                            <>
-                              <button
-                                onClick={() => handleRestoreSingle(photo.id, 'Standard')}
-                                className="px-3 py-1 text-dads-xs bg-dads-primary text-white rounded-dads-sm"
-                              >
-                                12h
-                              </button>
-                              <button
-                                onClick={() => handleRestoreSingle(photo.id, 'Bulk')}
-                                className="px-3 py-1 text-dads-xs border border-dads-primary text-dads-primary rounded-dads-sm"
-                              >
-                                48h
-                              </button>
-                            </>
-                          )}
-                          {(photo.status === PhotoStatus.RESTORING || photo.status === PhotoStatus.RESTORE_REQUESTED) && (
+                        {photo.status === PhotoStatus.ARCHIVED && (
+                          <div className="flex gap-1 ml-auto">
                             <button
-                              onClick={() => checkRestoreStatus(photo.id)}
-                              className="px-3 py-1 text-dads-xs border border-dads-primary text-dads-primary rounded-dads-sm"
+                              onClick={() => handleRestoreSingle(photo.id, 'Standard')}
+                              className="px-2.5 py-1 text-dads-xs bg-dads-primary text-white rounded-dads-sm whitespace-nowrap"
                             >
-                              確認
+                              12h
                             </button>
-                          )}
-                          {photo.status === PhotoStatus.RESTORED && (
                             <button
-                              onClick={() => handleDownload(photo.id)}
-                              className="px-3 py-1 text-dads-xs bg-dads-primary text-white rounded-dads-sm"
+                              onClick={() => handleRestoreSingle(photo.id, 'Bulk')}
+                              className="px-2.5 py-1 text-dads-xs border border-dads-primary text-dads-primary rounded-dads-sm whitespace-nowrap"
                             >
-                              DL
+                              48h
                             </button>
-                          )}
-                        </div>
+                          </div>
+                        )}
+                        {(photo.status === PhotoStatus.RESTORING || photo.status === PhotoStatus.RESTORE_REQUESTED) && (
+                          <button
+                            onClick={() => checkRestoreStatus(photo.id)}
+                            className="px-2.5 py-1 text-dads-xs border border-dads-primary text-dads-primary rounded-dads-sm ml-auto whitespace-nowrap"
+                          >
+                            確認
+                          </button>
+                        )}
+                        {photo.status === PhotoStatus.RESTORED && (
+                          <button
+                            onClick={() => handleDownload(photo.id)}
+                            className="px-2.5 py-1 text-dads-xs bg-dads-primary text-white rounded-dads-sm ml-auto whitespace-nowrap"
+                          >
+                            DL
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

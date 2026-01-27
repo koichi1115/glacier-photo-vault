@@ -34,12 +34,13 @@ export const Header: React.FC<HeaderProps> = ({ userName = 'demo-user', displayN
               <img src="/favicon.png" alt="Glacier Photo Vault" className="w-10 h-10 object-contain" />
             </div>
             <div className="min-w-0 flex-1">
-              <h1 className="text-base sm:text-lg md:text-xl font-extrabold text-dads-text-primary tracking-tight" style={{
+              <h1 className="text-sm sm:text-lg md:text-xl font-extrabold text-dads-text-primary tracking-tight" style={{
                 fontFamily: "'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                 letterSpacing: '-0.02em'
               }}>
-                <span className="hidden sm:inline">Glacier Photo Vault</span>
-                <span className="sm:hidden">Glacier</span>
+                <span className="hidden md:inline">Glacier Photo Vault</span>
+                <span className="hidden sm:inline md:hidden">Glacier PV</span>
+                <span className="sm:hidden">Glacier PV</span>
               </h1>
               <p className="text-xs sm:text-sm font-semibold text-dads-text-secondary mt-0.5 hidden sm:block" style={{
                 fontFamily: "'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
