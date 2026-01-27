@@ -955,11 +955,12 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
               </div>
             )}
 
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button
                 onClick={() => handleUpload()}
                 disabled={uploading}
-                className="flex-1 btn-pill btn-pill-primary disabled:opacity-50 disabled:cursor-not-allowed button-ripple"
+                className="w-full sm:flex-1 btn-pill btn-pill-primary disabled:opacity-50 disabled:cursor-not-allowed button-ripple whitespace-nowrap"
+                style={{ minHeight: '48px' }}
                 aria-busy={uploading}
               >
                 {uploading ? (
@@ -971,24 +972,27 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
                     アップロード中...
                   </span>
                 ) : (
-                  `🚀 Glacier Deep Archiveにアップロード ${selectedFiles.length > 0 ? `(${selectedFiles.length}件)` : ''}`
+                  <>
+                    <span className="hidden sm:inline">🚀 Glacier Deep Archiveにアップロード {selectedFiles.length > 0 ? `(${selectedFiles.length}件)` : ''}</span>
+                    <span className="sm:hidden">🚀 アップロード {selectedFiles.length > 0 ? `(${selectedFiles.length}件)` : ''}</span>
+                  </>
                 )}
               </button>
               {uploading ? (
                 <button
                   onClick={handleCancelUpload}
-                  className="btn-pill px-6 py-3 border-2 border-red-500 text-red-600 hover:bg-red-50 font-semibold"
+                  className="w-full sm:w-auto btn-pill px-4 sm:px-6 py-3 border-2 border-red-500 text-red-600 hover:bg-red-50 font-semibold whitespace-nowrap"
                   aria-label="アップロードを中断"
-                  style={{ borderRadius: 'var(--dads-radius-pill)' }}
+                  style={{ borderRadius: 'var(--dads-radius-pill)', minHeight: '48px' }}
                 >
                   ⏸️ 中断
                 </button>
               ) : (
                 <button
                   onClick={handleClearSelection}
-                  className="btn-pill px-6 py-3 bg-white border-2 border-dads-border text-dads-text-secondary hover:bg-dads-bg-secondary font-semibold"
+                  className="w-full sm:w-auto btn-pill px-4 sm:px-6 py-3 bg-white border-2 border-dads-border text-dads-text-secondary hover:bg-dads-bg-secondary font-semibold whitespace-nowrap"
                   aria-label="選択をクリア"
-                  style={{ borderRadius: 'var(--dads-radius-pill)' }}
+                  style={{ borderRadius: 'var(--dads-radius-pill)', minHeight: '48px' }}
                 >
                   ❌ キャンセル
                 </button>
@@ -1232,28 +1236,30 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
         {/* 一括操作ボタン */}
         {!loading && photos.length > 0 && selectedPhotoIds.length > 0 && (
-          <div className="nani-card p-6 mb-6 animate-fade-in" style={{ background: 'linear-gradient(135deg, #E0F0FF 0%, #F0E8FF 100%)' }}>
-            <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="nani-card p-4 sm:p-6 mb-6 animate-fade-in" style={{ background: 'linear-gradient(135deg, #E0F0FF 0%, #F0E8FF 100%)' }}>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
               <div className="text-dads-base font-semibold text-dads-text-primary">
                 ✅ {selectedPhotoIds.length}件選択中
               </div>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
                 <button
                   onClick={() => handleBulkRestore('Standard')}
-                  className="btn-pill btn-pill-primary text-dads-sm"
+                  className="btn-pill btn-pill-primary text-dads-sm whitespace-nowrap flex-1 sm:flex-none"
+                  style={{ minHeight: '40px' }}
                 >
                   ⚡ 一括復元（12h）
                 </button>
                 <button
                   onClick={() => handleBulkRestore('Bulk')}
-                  className="btn-pill btn-pill-secondary text-dads-sm"
+                  className="btn-pill btn-pill-secondary text-dads-sm whitespace-nowrap flex-1 sm:flex-none"
+                  style={{ minHeight: '40px' }}
                 >
-                  🐢 一括復元（48h・低コスト）
+                  🐢 一括復元（48h）
                 </button>
                 <button
                   onClick={() => setSelectedPhotoIds([])}
-                  className="btn-pill px-4 py-2 bg-white border-2 border-dads-border text-dads-text-secondary hover:bg-dads-bg-secondary text-dads-sm"
-                  style={{ borderRadius: 'var(--dads-radius-pill)' }}
+                  className="btn-pill px-4 py-2 bg-white border-2 border-dads-border text-dads-text-secondary hover:bg-dads-bg-secondary text-dads-sm whitespace-nowrap"
+                  style={{ borderRadius: 'var(--dads-radius-pill)', minHeight: '40px' }}
                 >
                   ❌ 解除
                 </button>
