@@ -1234,32 +1234,38 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
         {/* 一括操作ボタン */}
         {!loading && photos.length > 0 && selectedPhotoIds.length > 0 && (
-          <div className="nani-card p-4 sm:p-6 mb-6 animate-fade-in" style={{ background: 'linear-gradient(135deg, #E0F0FF 0%, #F0E8FF 100%)' }}>
-            <div className="space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-4">
-              <div className="text-dads-sm sm:text-dads-base font-semibold text-dads-text-primary flex-shrink-0">
-                ✅ {selectedPhotoIds.length}件選択中
+          <div className="nani-card p-3 sm:p-6 mb-6 animate-fade-in" style={{ background: 'linear-gradient(135deg, #E0F0FF 0%, #F0E8FF 100%)' }}>
+            <div className="flex items-center justify-between gap-2 sm:gap-4">
+              <div className="text-xs sm:text-dads-base font-semibold text-dads-text-primary flex-shrink-0">
+                ✅ {selectedPhotoIds.length}件
               </div>
-              <div className="grid grid-cols-3 gap-2 sm:flex sm:gap-3">
+              <div className="flex gap-1.5 sm:gap-3">
                 <button
                   onClick={() => handleBulkRestore('Standard')}
-                  className="btn-pill btn-pill-primary text-xs sm:text-dads-sm whitespace-nowrap px-2 sm:px-4"
-                  style={{ minHeight: '36px' }}
+                  className="btn-pill btn-pill-primary text-xs sm:text-dads-sm px-2 sm:px-4"
+                  style={{ minHeight: '32px' }}
+                  title="Standard復元（12時間）"
                 >
-                  ⚡ 12h復元
+                  <span className="sm:hidden">⚡12h</span>
+                  <span className="hidden sm:inline">⚡ 12h復元</span>
                 </button>
                 <button
                   onClick={() => handleBulkRestore('Bulk')}
-                  className="btn-pill btn-pill-secondary text-xs sm:text-dads-sm whitespace-nowrap px-2 sm:px-4"
-                  style={{ minHeight: '36px' }}
+                  className="btn-pill btn-pill-secondary text-xs sm:text-dads-sm px-2 sm:px-4"
+                  style={{ minHeight: '32px' }}
+                  title="Bulk復元（48時間）"
                 >
-                  🐢 48h復元
+                  <span className="sm:hidden">🐢48h</span>
+                  <span className="hidden sm:inline">🐢 48h復元</span>
                 </button>
                 <button
                   onClick={() => setSelectedPhotoIds([])}
-                  className="btn-pill px-2 sm:px-4 py-2 bg-white border-2 border-dads-border text-dads-text-secondary hover:bg-dads-bg-secondary text-xs sm:text-dads-sm whitespace-nowrap"
-                  style={{ borderRadius: 'var(--dads-radius-pill)', minHeight: '36px' }}
+                  className="btn-pill px-2 sm:px-4 py-1.5 bg-white border-2 border-dads-border text-dads-text-secondary hover:bg-dads-bg-secondary text-xs sm:text-dads-sm"
+                  style={{ borderRadius: 'var(--dads-radius-pill)', minHeight: '32px' }}
+                  title="選択解除"
                 >
-                  ❌ 解除
+                  <span className="sm:hidden">✕</span>
+                  <span className="hidden sm:inline">❌ 解除</span>
                 </button>
               </div>
             </div>
@@ -1437,22 +1443,46 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
             </div>
 
             {/* カードリスト（モバイル） */}
-            <div className="md:hidden divide-y divide-dads-border">
+            <div className="md:hidden">
+              {/* モバイル用ヘッダー: 全選択ボタン */}
+              <div className="flex items-center justify-between px-3 py-2 bg-dads-bg-secondary border-b border-dads-border">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={(() => {
+                      const filteredPhotos = getFilteredAndSortedPhotos();
+                      const currentPagePhotos = filteredPhotos.slice(
+                        (currentPage - 1) * itemsPerPage,
+                        currentPage * itemsPerPage
+                      );
+                      return currentPagePhotos.length > 0 && currentPagePhotos.every(p => selectedPhotoIds.includes(p.id));
+                    })()}
+                    onChange={handleToggleSelectAll}
+                    className="w-5 h-5 cursor-pointer"
+                  />
+                  <span className="text-dads-sm font-medium text-dads-text-primary">全選択</span>
+                </label>
+                <span className="text-dads-xs text-dads-text-secondary">
+                  {getFilteredAndSortedPhotos().length}件
+                </span>
+              </div>
+              <div className="divide-y divide-dads-border">
               {getFilteredAndSortedPhotos().slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((photo) => (
-                <div key={photo.id} className="p-4 hover:bg-dads-bg-secondary transition-colors">
-                  <div className="flex items-start gap-3">
+                <div key={photo.id} className="p-3 hover:bg-dads-bg-secondary transition-colors">
+                  {/* 上段: チェックボックス + サムネイル + ファイル情報 + ボタン */}
+                  <div className="flex items-start gap-2">
                     {/* チェックボックス */}
-                    <div className="pt-1">
+                    <div className="pt-2 flex-shrink-0">
                       <input
                         type="checkbox"
                         checked={selectedPhotoIds.includes(photo.id)}
                         onChange={() => handleToggleSelect(photo.id)}
-                        className="w-4 h-4 cursor-pointer"
+                        className="w-5 h-5 cursor-pointer"
                         aria-label={`${photo.title || photo.originalName}を選択`}
                       />
                     </div>
-                    {/* サムネイルまたはファイルタイプアイコン */}
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded flex items-center justify-center flex-shrink-0 overflow-hidden border border-dads-border">
+                    {/* サムネイル */}
+                    <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-200 rounded flex items-center justify-center flex-shrink-0 overflow-hidden border border-dads-border">
                       {photo.thumbnailUrl ? (
                         <img
                           src={photo.thumbnailUrl}
@@ -1483,54 +1513,58 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
                         <FileIcon />
                       )}
                     </div>
+                    {/* ファイル情報 */}
                     <div className="flex-1 min-w-0">
-                      <div className="text-dads-sm font-medium text-dads-text-primary truncate mb-1">
+                      <div className="text-dads-sm font-medium text-dads-text-primary truncate">
                         {photo.title || photo.originalName}
                       </div>
-                      <div className="flex items-center gap-2 text-dads-xs text-dads-text-secondary mb-2">
-                        <span>{formatBytes(photo.size)}</span>
-                        <span>•</span>
-                        <span>{new Date(photo.uploadedAt).toLocaleDateString('ja-JP')}</span>
+                      <div className="text-dads-xs text-dads-text-secondary mt-0.5">
+                        {formatBytes(photo.size)} • {new Date(photo.uploadedAt).toLocaleDateString('ja-JP')}
                       </div>
-                      <div className="flex flex-wrap items-center gap-2">
+                      {/* ステータスバッジ - 左寄せ */}
+                      <div className="mt-1.5">
                         <StatusBadge status={photo.status} />
-                        {photo.status === PhotoStatus.ARCHIVED && (
-                          <div className="flex gap-1 ml-auto">
-                            <button
-                              onClick={() => handleRestoreSingle(photo.id, 'Standard')}
-                              className="px-2.5 py-1 text-dads-xs bg-dads-primary text-white rounded-dads-sm whitespace-nowrap"
-                            >
-                              12h
-                            </button>
-                            <button
-                              onClick={() => handleRestoreSingle(photo.id, 'Bulk')}
-                              className="px-2.5 py-1 text-dads-xs border border-dads-primary text-dads-primary rounded-dads-sm whitespace-nowrap"
-                            >
-                              48h
-                            </button>
-                          </div>
-                        )}
-                        {(photo.status === PhotoStatus.RESTORING || photo.status === PhotoStatus.RESTORE_REQUESTED) && (
-                          <button
-                            onClick={() => checkRestoreStatus(photo.id)}
-                            className="px-2.5 py-1 text-dads-xs border border-dads-primary text-dads-primary rounded-dads-sm ml-auto whitespace-nowrap"
-                          >
-                            確認
-                          </button>
-                        )}
-                        {photo.status === PhotoStatus.RESTORED && (
-                          <button
-                            onClick={() => handleDownload(photo.id)}
-                            className="px-2.5 py-1 text-dads-xs bg-dads-primary text-white rounded-dads-sm ml-auto whitespace-nowrap"
-                          >
-                            DL
-                          </button>
-                        )}
                       </div>
+                    </div>
+                    {/* 復元ボタン - 右端縦並び */}
+                    <div className="flex flex-col gap-1 flex-shrink-0">
+                      {photo.status === PhotoStatus.ARCHIVED && (
+                        <>
+                          <button
+                            onClick={() => handleRestoreSingle(photo.id, 'Standard')}
+                            className="px-2 py-1 text-xs bg-dads-primary text-white rounded"
+                          >
+                            12h
+                          </button>
+                          <button
+                            onClick={() => handleRestoreSingle(photo.id, 'Bulk')}
+                            className="px-2 py-1 text-xs border border-dads-primary text-dads-primary rounded"
+                          >
+                            48h
+                          </button>
+                        </>
+                      )}
+                      {(photo.status === PhotoStatus.RESTORING || photo.status === PhotoStatus.RESTORE_REQUESTED) && (
+                        <button
+                          onClick={() => checkRestoreStatus(photo.id)}
+                          className="px-2 py-1 text-xs border border-dads-primary text-dads-primary rounded"
+                        >
+                          確認
+                        </button>
+                      )}
+                      {photo.status === PhotoStatus.RESTORED && (
+                        <button
+                          onClick={() => handleDownload(photo.id)}
+                          className="px-2 py-1 text-xs bg-dads-primary text-white rounded"
+                        >
+                          DL
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
               ))}
+              </div>
             </div>
 
             {/* ページネーション */}
