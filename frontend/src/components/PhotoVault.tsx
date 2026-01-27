@@ -152,7 +152,6 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
   const [uploadCancelled, setUploadCancelled] = useState(false);
   const [failedFiles, setFailedFiles] = useState<File[]>([]);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [skippedDuplicates, setSkippedDuplicates] = useState<number>(0);
 
   // Toast notifications
   const { toasts, success, error, warning, info, removeToast } = useToast();
@@ -266,18 +265,13 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
             const originalCount = filesArray.length;
             filesArray = filesArray.filter(f => !duplicateNames.has(f.name));
             const skippedCount = originalCount - filesArray.length;
-            setSkippedDuplicates(skippedCount);
-
             if (skippedCount > 0) {
               warning(`${skippedCount}件のファイルは既にアップロード済みのためスキップしました`);
             }
-          } else {
-            setSkippedDuplicates(0);
           }
         } catch (err) {
           console.error('重複チェックエラー:', err);
           // エラー時は全ファイルを選択状態にする
-          setSkippedDuplicates(0);
         }
 
         if (filesArray.length === 0) {
@@ -314,16 +308,13 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
           if (result.duplicates && result.duplicates.length > 0) {
             warning('このファイルは既にアップロード済みです');
-            setSkippedDuplicates(1);
             setSelectedFile(null);
             setSelectedFiles([]);
             setThumbnails({});
             return;
           }
-          setSkippedDuplicates(0);
         } catch (err) {
           console.error('重複チェックエラー:', err);
-          setSkippedDuplicates(0);
         }
 
         setSelectedFile(file);
@@ -349,7 +340,6 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
     setTitle('');
     setDescription('');
     setTags('');
-    setSkippedDuplicates(0);
     // Reset file inputs
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
