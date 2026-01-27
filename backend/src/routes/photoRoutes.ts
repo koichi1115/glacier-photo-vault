@@ -231,4 +231,25 @@ router.patch(
   }
 );
 
+// Check for duplicate files
+router.post(
+  '/check-duplicates',
+  authenticateJWT,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.userId;
+      const { files } = req.body;
+
+      if (!Array.isArray(files)) {
+        return res.status(400).json({ error: 'files must be an array' });
+      }
+
+      const duplicates = await glacierService.checkDuplicates(userId, files);
+      res.json({ success: true, duplicates });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
 export default router;

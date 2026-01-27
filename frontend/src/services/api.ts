@@ -189,6 +189,20 @@ class ApiService {
     const response = await this.fetch(`/api/photos/${photoId}/download`);
     return response.json();
   }
+
+  async checkDuplicates(files: Array<{ name: string; size: number }>): Promise<{
+    success: boolean;
+    duplicates: Array<{ name: string; size: number; existingPhotoId: string }>;
+  }> {
+    const response = await this.fetch('/api/photos/check-duplicates', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ files }),
+    });
+    return response.json();
+  }
 }
 
 export const api = new ApiService();

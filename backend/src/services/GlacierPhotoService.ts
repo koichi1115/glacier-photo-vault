@@ -457,4 +457,38 @@ export class GlacierPhotoService {
 
     return result;
   }
+
+  /**
+   * Check for duplicate files based on filename and size
+   * Returns list of files that already exist in the user's vault
+   */
+  async checkDuplicates(
+    userId: string,
+    files: Array<{ name: string; size: number }>
+  ): Promise<Array<{ name: string; size: number; existingPhotoId: string }>> {
+    if (files.length === 0) return [];
+
+    // Build query to check for duplicates
+    const duplicates: Array<{ name: string; size: number; existingPhotoId: string }> = [];
+
+    // Check each file against existing photos
+    for (const file of files) {
+      const res = await pool.query(`
+        SELECT id, original_name, size
+        FROM photos
+        WHERE user_id = $1 AND original_name = $2 AND size = $3
+        LIMIT 1
+      `, [userId, file.name, file.size]);
+
+      if (res.rows.length > 0) {
+        duplicates.push({
+          name: file.name,
+          size: file.size,
+          existingPhotoId: res.rows[0].id,
+        });
+      }
+    }
+
+    return duplicates;
+  }
 }
