@@ -1059,7 +1059,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
         {/* フィルター・並び替えコントロール */}
         {!loading && photos.length > 0 && (
-          <div className="nani-card p-6 mb-6">
+          <div className="nani-card p-4 sm:p-6 mb-6">
             {/* カテゴリータグフィルター（Nani風） */}
             <div className="mb-6">
               <label className="text-dads-sm font-semibold text-dads-text-primary mb-3 block">
@@ -1155,10 +1155,10 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
             {/* 並び替え・表示件数行 */}
             <div className="border-t border-dads-border pt-4">
-              <div className="flex flex-wrap items-end justify-between gap-4">
-                <div className="flex flex-wrap items-end gap-4">
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-end gap-4">
                   {/* 並び替え */}
-                  <div className="w-full sm:w-auto sm:min-w-[200px]">
+                  <div className="flex-1 min-w-0">
                     <label className="text-dads-xs font-medium text-dads-text-secondary mb-1 block">
                       並び替え
                     </label>
@@ -1169,7 +1169,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
                           setSortBy(e.target.value as any);
                           setCurrentPage(1);
                         }}
-                        className="flex-1 px-3 py-2 text-dads-sm border border-dads-border rounded-dads-md focus:outline-none focus:ring-2 focus:ring-dads-primary"
+                        className="flex-1 min-w-0 px-3 py-2 text-dads-sm border border-dads-border rounded-dads-md focus:outline-none focus:ring-2 focus:ring-dads-primary"
                       >
                         <option value="uploadDate">アップロード日</option>
                         <option value="size">サイズ</option>
@@ -1179,7 +1179,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
                           setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                           setCurrentPage(1);
                         }}
-                        className="px-3 py-2 border border-dads-border rounded-dads-md hover:bg-dads-bg-secondary transition-colors"
+                        className="px-3 py-2 border border-dads-border rounded-dads-md hover:bg-dads-bg-secondary transition-colors flex-shrink-0"
                         title={sortOrder === 'asc' ? '昇順' : '降順'}
                       >
                         {sortOrder === 'asc' ? '↑' : '↓'}
@@ -1188,11 +1188,11 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
                   </div>
 
                   {/* 表示件数 */}
-                  <div>
+                  <div className="flex-shrink-0">
                     <label className="text-dads-xs font-medium text-dads-text-secondary mb-1 block">
                       表示件数
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1 sm:gap-2">
                       {[10, 20, 50, 100].map((count) => (
                         <button
                           key={count}
@@ -1200,7 +1200,7 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
                             setItemsPerPage(count);
                             setCurrentPage(1);
                           }}
-                          className={`px-3 py-2 rounded-dads-sm text-dads-sm transition-colors ${itemsPerPage === count
+                          className={`px-2 sm:px-3 py-2 rounded-dads-sm text-dads-sm transition-colors flex-shrink-0 ${itemsPerPage === count
                             ? 'bg-dads-primary text-white'
                             : 'bg-dads-bg-secondary text-dads-text-secondary hover:bg-dads-bg-tertiary'
                             }`}
@@ -1214,20 +1214,18 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
 
                 {/* フィルタークリアボタン */}
                 {(filterType !== 'all' || filterTag || filterDateFrom || filterDateTo) && (
-                  <div className="flex items-end">
-                    <button
-                      onClick={() => {
-                        setFilterType('all');
-                        setFilterTag('');
-                        setFilterDateFrom('');
-                        setFilterDateTo('');
-                        setCurrentPage(1);
-                      }}
-                      className="px-4 py-2 text-dads-sm text-dads-primary hover:text-dads-primary-hover border border-dads-primary rounded-dads-md hover:bg-blue-50 transition-colors"
-                    >
-                      フィルターをクリア
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => {
+                      setFilterType('all');
+                      setFilterTag('');
+                      setFilterDateFrom('');
+                      setFilterDateTo('');
+                      setCurrentPage(1);
+                    }}
+                    className="w-full sm:w-auto px-4 py-2 text-dads-sm text-dads-primary hover:text-dads-primary-hover border border-dads-primary rounded-dads-md hover:bg-blue-50 transition-colors"
+                  >
+                    フィルターをクリア
+                  </button>
                 )}
               </div>
             </div>
@@ -1237,29 +1235,29 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
         {/* 一括操作ボタン */}
         {!loading && photos.length > 0 && selectedPhotoIds.length > 0 && (
           <div className="nani-card p-4 sm:p-6 mb-6 animate-fade-in" style={{ background: 'linear-gradient(135deg, #E0F0FF 0%, #F0E8FF 100%)' }}>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-              <div className="text-dads-base font-semibold text-dads-text-primary">
+            <div className="space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-4">
+              <div className="text-dads-sm sm:text-dads-base font-semibold text-dads-text-primary flex-shrink-0">
                 ✅ {selectedPhotoIds.length}件選択中
               </div>
-              <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
+              <div className="grid grid-cols-3 gap-2 sm:flex sm:gap-3">
                 <button
                   onClick={() => handleBulkRestore('Standard')}
-                  className="btn-pill btn-pill-primary text-dads-sm whitespace-nowrap flex-1 sm:flex-none"
-                  style={{ minHeight: '40px' }}
+                  className="btn-pill btn-pill-primary text-xs sm:text-dads-sm whitespace-nowrap px-2 sm:px-4"
+                  style={{ minHeight: '36px' }}
                 >
-                  ⚡ 一括復元（12h）
+                  ⚡ 12h復元
                 </button>
                 <button
                   onClick={() => handleBulkRestore('Bulk')}
-                  className="btn-pill btn-pill-secondary text-dads-sm whitespace-nowrap flex-1 sm:flex-none"
-                  style={{ minHeight: '40px' }}
+                  className="btn-pill btn-pill-secondary text-xs sm:text-dads-sm whitespace-nowrap px-2 sm:px-4"
+                  style={{ minHeight: '36px' }}
                 >
-                  🐢 一括復元（48h）
+                  🐢 48h復元
                 </button>
                 <button
                   onClick={() => setSelectedPhotoIds([])}
-                  className="btn-pill px-4 py-2 bg-white border-2 border-dads-border text-dads-text-secondary hover:bg-dads-bg-secondary text-dads-sm whitespace-nowrap"
-                  style={{ borderRadius: 'var(--dads-radius-pill)', minHeight: '40px' }}
+                  className="btn-pill px-2 sm:px-4 py-2 bg-white border-2 border-dads-border text-dads-text-secondary hover:bg-dads-bg-secondary text-xs sm:text-dads-sm whitespace-nowrap"
+                  style={{ borderRadius: 'var(--dads-radius-pill)', minHeight: '36px' }}
                 >
                   ❌ 解除
                 </button>
