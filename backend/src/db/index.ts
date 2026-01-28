@@ -59,6 +59,48 @@ export const initDb = async () => {
       )
     `);
 
+    // Add payment-related columns to users table
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS first_payment_failed_at BIGINT
+    `);
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS scheduled_deletion_at BIGINT
+    `);
+
+    // Subscriptions table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+        user_id TEXT UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+        stripe_customer_id TEXT,
+        stripe_subscription_id TEXT,
+        status TEXT DEFAULT 'trialing',
+        trial_start BIGINT,
+        trial_end BIGINT,
+        current_period_start BIGINT,
+        current_period_end BIGINT,
+        canceled_at BIGINT,
+        created_at BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT,
+        updated_at BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT
+      )
+    `);
+
+    // Coupons table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS coupons (
+        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+        code TEXT UNIQUE NOT NULL,
+        stripe_coupon_id TEXT,
+        discount_percent INTEGER,
+        discount_amount INTEGER,
+        valid_until BIGINT,
+        max_uses INTEGER,
+        current_uses INTEGER DEFAULT 0,
+        is_active BOOLEAN DEFAULT true,
+        created_at BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT
+      )
+    `);
+
     console.log('✅ Database initialized (PostgreSQL)');
   } catch (error) {
     console.error('❌ Database initialization failed:', error);

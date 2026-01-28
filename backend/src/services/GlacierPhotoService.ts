@@ -5,6 +5,7 @@ import {
   HeadObjectCommand,
   RestoreObjectCommand,
   DeleteObjectCommand,
+  ListObjectsV2Command,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
@@ -490,5 +491,51 @@ export class GlacierPhotoService {
     }
 
     return duplicates;
+  }
+
+  /**
+   * Delete all files in a user's S3 folder
+   * Used for cleanup when subscription expires
+   */
+  async deleteUserFolder(userId: string): Promise<void> {
+    const prefix = `${userId}/`;
+
+    try {
+      // List all objects with the user's prefix
+      let continuationToken: string | undefined;
+
+      do {
+        const listCommand = new ListObjectsV2Command({
+          Bucket: this.bucketName,
+          Prefix: prefix,
+          ContinuationToken: continuationToken,
+        });
+
+        const listResponse = await this.s3Client.send(listCommand);
+
+        if (listResponse.Contents && listResponse.Contents.length > 0) {
+          // Delete each object
+          for (const object of listResponse.Contents) {
+            if (object.Key) {
+              const deleteCommand = new DeleteObjectCommand({
+                Bucket: this.bucketName,
+                Key: object.Key,
+              });
+              await this.s3Client.send(deleteCommand);
+            }
+          }
+        }
+
+        continuationToken = listResponse.NextContinuationToken;
+      } while (continuationToken);
+
+      // Delete all photos from DB for this user
+      await pool.query('DELETE FROM photos WHERE user_id = $1', [userId]);
+
+      console.log(`✅ Deleted all S3 objects for user: ${userId}`);
+    } catch (error) {
+      console.error(`Error deleting user folder for ${userId}:`, error);
+      throw new Error('Failed to delete user folder');
+    }
   }
 }

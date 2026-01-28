@@ -5,6 +5,7 @@ import { S3Client } from '@aws-sdk/client-s3';
 import { GlacierPhotoService } from '../services/GlacierPhotoService';
 import { authenticateJWT } from '../middleware/auth';
 import { authorizePhotoOwner, authorizeOwner } from '../middleware/authorize';
+import { requireSubscription } from '../middleware/requireSubscription';
 import { PhotoStatus } from '@glacier-photo-vault/shared';
 
 const router = express.Router();
@@ -61,6 +62,7 @@ const upload = multer({
 router.post(
   '/upload',
   authenticateJWT,
+  requireSubscription,
   upload.single('photo'),
   async (req: Request, res: Response) => {
     try {

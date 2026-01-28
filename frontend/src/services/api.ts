@@ -203,6 +203,79 @@ class ApiService {
     });
     return response.json();
   }
+
+  // Billing API Methods
+  async createSetupIntent(): Promise<{
+    success: boolean;
+    clientSecret: string;
+    customerId: string;
+  }> {
+    const response = await this.fetch('/api/billing/setup-intent', {
+      method: 'POST',
+    });
+    return response.json();
+  }
+
+  async confirmCard(paymentMethodId: string, couponCode?: string): Promise<{
+    success: boolean;
+    subscription: {
+      status: string;
+      trialEnd: number;
+    };
+  }> {
+    const response = await this.fetch('/api/billing/confirm-card', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paymentMethodId, couponCode }),
+    });
+    return response.json();
+  }
+
+  async getSubscription(): Promise<{
+    success: boolean;
+    subscription: {
+      status: string;
+      trialStart: number | null;
+      trialEnd: number | null;
+      currentPeriodStart: number | null;
+      currentPeriodEnd: number | null;
+      canceledAt: number | null;
+    } | null;
+    hasSubscription: boolean;
+    isValid: boolean;
+    trialDaysRemaining?: number;
+  }> {
+    const response = await this.fetch('/api/billing/subscription');
+    return response.json();
+  }
+
+  async validateCoupon(code: string): Promise<{
+    success: boolean;
+    valid: boolean;
+    message?: string;
+    coupon?: {
+      code: string;
+      discountPercent: number | null;
+      discountAmount: number | null;
+    };
+  }> {
+    const response = await this.fetch('/api/billing/coupon/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    return response.json();
+  }
+
+  async cancelSubscription(): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    const response = await this.fetch('/api/billing/cancel', {
+      method: 'POST',
+    });
+    return response.json();
+  }
 }
 
 export const api = new ApiService();

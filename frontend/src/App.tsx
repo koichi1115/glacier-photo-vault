@@ -3,13 +3,43 @@ import { Header } from './components/Header';
 import { PhotoVault } from './components/PhotoVault';
 import { Login } from './components/Login';
 import { AuthCallback } from './components/AuthCallback';
+import { SubscriptionPage } from './components/SubscriptionPage';
+import { TrialBanner } from './components/TrialBanner';
 import { api, User } from './services/api';
 import './App.css';
+
+interface SubscriptionState {
+  hasSubscription: boolean;
+  isValid: boolean;
+  status: string | null;
+  trialDaysRemaining?: number;
+}
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [path, setPath] = useState(window.location.pathname);
+  const [subscription, setSubscription] = useState<SubscriptionState>({
+    hasSubscription: false,
+    isValid: false,
+    status: null,
+  });
+
+  const checkSubscription = async () => {
+    try {
+      const result = await api.getSubscription();
+      setSubscription({
+        hasSubscription: result.hasSubscription,
+        isValid: result.isValid,
+        status: result.subscription?.status || null,
+        trialDaysRemaining: result.trialDaysRemaining,
+      });
+      return result.hasSubscription && result.isValid;
+    } catch (error) {
+      console.error('Failed to check subscription:', error);
+      return false;
+    }
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -27,6 +57,8 @@ function App() {
         try {
           const userData = await api.getMe();
           setUser(userData);
+          // Check subscription status
+          await checkSubscription();
         } catch (error) {
           console.error('Session check failed:', error);
           api.logout();
@@ -70,10 +102,30 @@ function App() {
     setPath(newPath);
   };
 
+  // Handle subscription completion
+  const handleSubscriptionComplete = async () => {
+    await checkSubscription();
+    navigate('/');
+  };
+
+  // Route: Subscription required (no valid subscription)
+  if (!subscription.isValid) {
+    return (
+      <SubscriptionPage onSubscriptionComplete={handleSubscriptionComplete} />
+    );
+  }
 
   // Route: Main App (Photo Vault)
   return (
     <div className="app">
+      {/* トライアルバナー表示 */}
+      {subscription.status === 'trialing' &&
+        subscription.trialDaysRemaining !== undefined && (
+          <TrialBanner
+            daysRemaining={subscription.trialDaysRemaining}
+            onUpgrade={() => navigate('/billing')}
+          />
+        )}
       <Header
         userName={user.email.split('@')[0] || 'User'}
         displayName={user.displayName}

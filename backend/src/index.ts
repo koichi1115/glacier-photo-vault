@@ -13,6 +13,8 @@ import { SessionManager } from './services/SessionManager';
 import { setupSocketHandlers } from './socket/handlers';
 import photoRoutes from './routes/photoRoutes';
 import authRoutes from './routes/authRoutes';
+import billingRoutes from './routes/billingRoutes';
+import webhookRoutes from './routes/webhookRoutes';
 import { initDb } from './db';
 
 const app = express();
@@ -138,6 +140,12 @@ app.use('/api/auth', authLimiter, authRoutes);
 
 // 写真ストレージルート（アップロード専用レート制限）
 app.use('/api/photos', uploadLimiter, photoRoutes);
+
+// 課金ルート
+app.use('/api/billing', generalLimiter, billingRoutes);
+
+// Stripeウェブフック（express.jsonより前に設定する必要があるため、webhookRoutes内でraw parserを使用）
+app.use('/api/webhook', webhookRoutes);
 
 
 // Initialize session manager
