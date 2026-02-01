@@ -182,13 +182,13 @@ const CheckoutForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
               setCouponInfo(null);
             }}
             placeholder="COUPON123"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 box-border"
           />
           <button
             type="button"
             onClick={handleValidateCoupon}
             disabled={!couponCode.trim()}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 whitespace-nowrap"
           >
             確認
           </button>
