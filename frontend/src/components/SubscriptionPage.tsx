@@ -143,6 +143,8 @@ const CheckoutForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
         iconColor: '#fa755a',
       },
     },
+    // 日本のカードでは郵便番号は不要なので非表示
+    hidePostalCode: true,
   };
 
   return (
@@ -268,8 +270,8 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
   onSubscriptionComplete,
 }) => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 py-8 px-4 sm:flex sm:items-center sm:justify-center">
+      <div className="w-full max-w-md mx-auto">
         {/* ロゴ・ヘッダー */}
         <div className="text-center mb-8">
           <div className="w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-white shadow-lg">

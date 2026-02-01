@@ -131,8 +131,9 @@ function App() {
         displayName={user.displayName}
         profilePhoto={user.profilePhoto}
         onNavigate={navigate}
+        subscriptionStatus={subscription.status as 'trialing' | 'active' | 'past_due' | 'canceled' | 'incomplete' | null}
       />
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1">
         <PhotoVault userId={user.userId} />
       </main>
     </div>

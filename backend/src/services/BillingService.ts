@@ -48,14 +48,20 @@ export class BillingService {
   }
 
   /**
-   * Get user email from users table
+   * Get user info from users table
    */
-  async getUserEmail(userId: string): Promise<string | null> {
+  async getUserInfo(userId: string): Promise<{ email: string | null; name: string | null } | null> {
     const result = await pool.query(
-      'SELECT email FROM users WHERE id = $1',
+      'SELECT email, name FROM users WHERE id = $1',
       [userId]
     );
-    return result.rows[0]?.email || null;
+    if (!result.rows[0]) {
+      return null;
+    }
+    return {
+      email: result.rows[0].email || null,
+      name: result.rows[0].name || null,
+    };
   }
 
   /**
@@ -65,10 +71,13 @@ export class BillingService {
     clientSecret: string;
     customerId: string;
   }> {
-    const email = await this.getUserEmail(userId);
-    if (!email) {
+    const userInfo = await this.getUserInfo(userId);
+    if (!userInfo) {
       throw new Error('User not found');
     }
+
+    // Use email or generate placeholder for LINE users without email
+    const email = userInfo.email || `${userId}@glacier-vault.local`;
 
     // Check if subscription already exists
     const existingSub = await this.getSubscription(userId);

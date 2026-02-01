@@ -1,9 +1,7 @@
 /* DADS準拠のアプリケーションコンテナ */
 .app {
   width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  min-height: 100vh;
   background-color: var(--dads-bg-secondary);
   color: var(--dads-text-primary);
 }

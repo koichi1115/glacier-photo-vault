@@ -87,6 +87,8 @@
     padding: 0;
     background: transparent;
     overflow-x: hidden;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* アクセシビリティ: フォーカスリング */
@@ -120,9 +122,8 @@
 
 /* Custom styles */
 #root {
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+  width: 100%;
+  min-height: 100vh;
 }
 
 /* カードホバーエフェクト - Nani inspired floating effect */

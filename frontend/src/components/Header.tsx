@@ -10,10 +10,27 @@ interface HeaderProps {
   displayName?: string;
   profilePhoto?: string;
   onNavigate?: (path: string) => void;
+  subscriptionStatus?: 'trialing' | 'active' | 'past_due' | 'canceled' | 'incomplete' | null;
 }
 
-export const Header: React.FC<HeaderProps> = ({ userName = 'demo-user', displayName, profilePhoto, onNavigate }) => {
+export const Header: React.FC<HeaderProps> = ({ userName = 'demo-user', displayName, profilePhoto, onNavigate, subscriptionStatus }) => {
   const displayedName = displayName || userName;
+
+  // サブスクリプション状態に応じたプランラベル
+  const getPlanLabel = () => {
+    switch (subscriptionStatus) {
+      case 'trialing':
+        return 'トライアル中';
+      case 'active':
+        return '有料プラン';
+      case 'past_due':
+        return '支払い遅延';
+      case 'canceled':
+        return '解約済み';
+      default:
+        return '無料プラン';
+    }
+  };
 
   const handleNavigation = (path: string) => (e: React.MouseEvent) => {
     e.preventDefault();
@@ -117,7 +134,7 @@ export const Header: React.FC<HeaderProps> = ({ userName = 'demo-user', displayN
                   {displayedName}
                 </p>
                 <p className="text-dads-xs text-dads-text-secondary">
-                  無料プラン
+                  {getPlanLabel()}
                 </p>
               </div>
             </div>

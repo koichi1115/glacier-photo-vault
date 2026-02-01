@@ -35,9 +35,42 @@ export interface Coupon {
 
 export class StripeService {
   private stripe: Stripe;
+  private productId: string | null = null;
 
   constructor() {
     this.stripe = stripe;
+  }
+
+  /**
+   * Get or create the Glacier Photo Vault product
+   */
+  private async getOrCreateProduct(): Promise<string> {
+    if (this.productId) {
+      return this.productId;
+    }
+
+    // Search for existing product
+    const products = await this.stripe.products.list({
+      limit: 100,
+    });
+
+    const existingProduct = products.data.find(
+      (p) => p.name === 'Glacier Photo Vault ストレージ' && p.active
+    );
+
+    if (existingProduct) {
+      this.productId = existingProduct.id;
+      return this.productId;
+    }
+
+    // Create new product
+    const product = await this.stripe.products.create({
+      name: 'Glacier Photo Vault ストレージ',
+      description: '超低コスト写真保管サービス - 従量課金 ¥10/GB/月',
+    });
+
+    this.productId = product.id;
+    return this.productId;
   }
 
   /**
@@ -94,6 +127,9 @@ export class StripeService {
     trialDays: number = 30,
     couponId?: string
   ): Promise<Stripe.Subscription> {
+    // Get or create product first
+    const productId = await this.getOrCreateProduct();
+
     const subscriptionParams: Stripe.SubscriptionCreateParams = {
       customer: customerId,
       items: [
@@ -101,9 +137,7 @@ export class StripeService {
           // Usage-based pricing - we'll add invoice items for storage usage
           price_data: {
             currency: 'jpy',
-            product_data: {
-              name: 'Glacier Photo Vault ストレージ',
-            },
+            product: productId, // Use product ID instead of product_data
             recurring: {
               interval: 'month',
             },
