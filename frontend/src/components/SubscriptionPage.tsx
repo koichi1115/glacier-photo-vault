@@ -7,7 +7,9 @@ import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
-  CardElement,
+  CardNumberElement,
+  CardExpiryElement,
+  CardCvcElement,
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js';
@@ -86,8 +88,8 @@ const CheckoutForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
 
     try {
       // カード情報を確認
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) {
+      const cardNumberElement = elements.getElement(CardNumberElement);
+      if (!cardNumberElement) {
         throw new Error('カード情報が入力されていません');
       }
 
@@ -96,7 +98,7 @@ const CheckoutForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
         clientSecret,
         {
           payment_method: {
-            card: cardElement,
+            card: cardNumberElement,
           },
         }
       );
@@ -127,7 +129,7 @@ const CheckoutForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
     }
   };
 
-  const cardStyle = {
+  const elementStyle = {
     style: {
       base: {
         color: '#32325d',
@@ -143,8 +145,6 @@ const CheckoutForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
         iconColor: '#fa755a',
       },
     },
-    // 日本のカードでは郵便番号は不要なので非表示
-    hidePostalCode: true,
   };
 
   return (
@@ -210,8 +210,18 @@ const CheckoutForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
         <label className="block text-sm font-medium text-gray-700 mb-1">
           カード情報
         </label>
-        <div className="p-4 border border-gray-300 rounded-lg bg-white">
-          <CardElement options={cardStyle} />
+        <div className="border border-gray-300 rounded-lg bg-white overflow-hidden">
+          <div className="p-3 border-b border-gray-200">
+            <CardNumberElement options={elementStyle} />
+          </div>
+          <div className="flex">
+            <div className="flex-1 min-w-0 p-3 border-r border-gray-200">
+              <CardExpiryElement options={elementStyle} />
+            </div>
+            <div className="flex-1 min-w-0 p-3">
+              <CardCvcElement options={elementStyle} />
+            </div>
+          </div>
         </div>
         <p className="mt-1 text-xs text-gray-500">
           30日間は課金されません。トライアル終了後に自動的に課金が開始されます。
