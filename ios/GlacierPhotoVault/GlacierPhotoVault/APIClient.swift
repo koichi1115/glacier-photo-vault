@@ -143,6 +143,26 @@ final class AuthManager: NSObject, ObservableObject {
         isAuthenticated = true
     }
 
+    /// Sign in with Apple: 検証済みidentityTokenをバックエンドに渡してトークンを得る
+    func signInWithApple(identityToken: String, fullName: String?) async throws {
+        var request = URLRequest(url: AppConfig.apiBaseURL.appendingPathComponent("/api/auth/apple"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        var body: [String: String] = ["identityToken": identityToken]
+        if let fullName, !fullName.isEmpty { body["fullName"] = fullName }
+        request.httpBody = try JSONEncoder().encode(body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            throw APIError.authenticationFailed
+        }
+        let tokens = try JSONDecoder().decode(TokenResponse.self, from: data)
+        Keychain.set(tokens.accessToken, for: "accessToken")
+        Keychain.set(tokens.refreshToken, for: "refreshToken")
+        isAuthenticated = true
+        currentUser = try? await APIClient.shared.getMe()
+    }
+
     /// リフレッシュトークンでアクセストークンを更新。失敗時はfalse。
     func refreshTokens() async -> Bool {
         guard let refresh = refreshToken else { return false }

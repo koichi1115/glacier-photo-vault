@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AuthenticationServices
 
 struct ContentView: View {
     @StateObject private var auth = AuthManager.shared
@@ -46,6 +47,14 @@ struct LoginView: View {
             Spacer()
 
             VStack(spacing: DADSSpacing.md) {
+                SignInWithAppleButton(.signIn) { request in
+                    request.requestedScopes = [.email, .fullName]
+                } onCompletion: { result in
+                    handleAppleSignIn(result)
+                }
+                .frame(height: 48)
+                .cornerRadius(DADSRadius.medium)
+
                 Button {
                     signIn(.google)
                 } label: {
@@ -98,6 +107,36 @@ struct LoginView: View {
             isSigningIn = false
         }
     }
+
+    private func handleAppleSignIn(_ result: Result<ASAuthorization, Error>) {
+        guard case .success(let authorization) = result,
+              let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+              let tokenData = credential.identityToken,
+              let identityToken = String(data: tokenData, encoding: .utf8) else {
+            if case .failure = result {
+                errorMessage = "Appleでのログインに失敗しました。"
+            }
+            return
+        }
+
+        let fullName = [credential.fullName?.familyName, credential.fullName?.givenName]
+            .compactMap { $0 }
+            .joined(separator: " ")
+
+        isSigningIn = true
+        errorMessage = nil
+        Task {
+            do {
+                try await auth.signInWithApple(
+                    identityToken: identityToken,
+                    fullName: fullName.isEmpty ? nil : fullName
+                )
+            } catch {
+                errorMessage = "Appleでのログインに失敗しました。"
+            }
+            isSigningIn = false
+        }
+    }
 }
 
 // MARK: - Vault (main)
@@ -105,6 +144,7 @@ struct LoginView: View {
 struct VaultView: View {
     @StateObject private var viewModel = PhotoViewModel()
     @State private var showingUploadSheet = false
+    @State private var showingBackupSheet = false
 
     var body: some View {
         NavigationView {
@@ -179,16 +219,28 @@ struct VaultView: View {
                     .foregroundColor(DADSColor.textSecondary)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingUploadSheet = true }) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                            .foregroundColor(DADSColor.primary)
+                    HStack(spacing: DADSSpacing.sm) {
+                        Button(action: { showingBackupSheet = true }) {
+                            Image(systemName: "icloud.and.arrow.up")
+                                .font(.title3)
+                                .foregroundColor(DADSColor.primary)
+                        }
+                        .accessibilityLabel("ライブラリバックアップ")
+
+                        Button(action: { showingUploadSheet = true }) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.title2)
+                                .foregroundColor(DADSColor.primary)
+                        }
+                        .accessibilityLabel("写真をアップロード")
                     }
-                    .accessibilityLabel("写真をアップロード")
                 }
             }
             .sheet(isPresented: $showingUploadSheet) {
                 UploadPhotoView(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showingBackupSheet) {
+                BackupView()
             }
             .task {
                 await viewModel.refresh()

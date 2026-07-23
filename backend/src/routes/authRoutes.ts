@@ -8,6 +8,7 @@ import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import passport from '../config/passport';
 import { AuthService, JwtPayload } from '../services/AuthService';
+import { verifyAppleIdentityToken } from '../services/AppleAuthService';
 import { authenticateJWT } from '../middleware/auth';
 import pool from '../db';
 
@@ -185,6 +186,53 @@ router.get(
     }
   }
 );
+
+// ============================================================
+// Sign in with Apple（ネイティブ）
+// ============================================================
+
+/**
+ * iOSネイティブのSign in with Apple。
+ * ASAuthorizationAppleIDCredential の identityToken を検証してトークンを発行する。
+ * POST /api/auth/apple
+ * Body: { identityToken: string, fullName?: string }
+ */
+router.post('/apple', async (req: Request, res: Response) => {
+  try {
+    const { identityToken, fullName } = req.body;
+
+    if (!identityToken || typeof identityToken !== 'string') {
+      res.status(400).json({ error: 'BadRequest', message: 'identityToken is required' });
+      return;
+    }
+
+    const identity = await verifyAppleIdentityToken(identityToken);
+    const userId = `apple_${identity.sub}`;
+    // Appleはメールを初回のみ返す（メール非公開設定ではリレーアドレス）
+    const email = identity.email || `${userId}@privaterelay.invalid`;
+    const displayName =
+      typeof fullName === 'string' && fullName.trim() ? fullName.trim() : email.split('@')[0];
+
+    await upsertUser(
+      { userId, email, displayName, id: identity.sub },
+      'apple'
+    );
+
+    const payload: JwtPayload = {
+      userId,
+      email,
+      provider: 'apple',
+      displayName,
+    };
+    const accessToken = authService.generateAccessToken(payload);
+    const refreshToken = await authService.generateRefreshToken(userId);
+
+    res.json({ accessToken, refreshToken });
+  } catch (error: any) {
+    console.error('Apple sign-in error:', error.message);
+    res.status(401).json({ error: 'Unauthorized', message: 'Apple sign-in failed' });
+  }
+});
 
 // ============================================================
 // トークン管理
