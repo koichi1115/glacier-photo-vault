@@ -10,6 +10,7 @@ import session from 'express-session';
 import passport from './config/passport';
 import photoRoutes from './routes/photoRoutes';
 import uploadRoutes from './routes/uploadRoutes';
+import credentialRoutes from './routes/credentialRoutes';
 import authRoutes from './routes/authRoutes';
 import billingRoutes from './routes/billingRoutes';
 import webhookRoutes from './routes/webhookRoutes';
@@ -144,6 +145,9 @@ app.use('/api/photos', uploadLimiter, photoRoutes);
 
 // プリサインドURL直接アップロードルート
 app.use('/api/uploads', uploadLimiter, uploadRoutes);
+
+// STSスコープ付き一時クレデンシャル
+app.use('/api/credentials', generalLimiter, credentialRoutes);
 
 // 課金ルート
 app.use('/api/billing', generalLimiter, billingRoutes);

@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/backend/src/index.js"
+    "start": "node dist/backend/src/index.js",
+    "migrate:tiers": "tsx src/scripts/migrateSubscriptionsToTiers.ts"
   },
   "dependencies": {
     "stripe": "^14.0.0",
     "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/client-sts": "^3.600.0",
     "@aws-sdk/s3-request-presigner": "^3.600.0",
     "@glacier-photo-vault/shared": "*",
     "@types/cors": "^2.8.17",
