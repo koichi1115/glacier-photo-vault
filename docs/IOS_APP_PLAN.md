@@ -1,7 +1,7 @@
 # iOSアプリ化 実装プラン（確定版）
 
 作成日: 2026-07-24
-ステータス: 承認済み方針に基づく確定版
+ステータス: 承認済み方針に基づく確定版（実装状況は末尾参照）
 
 ## 決定事項
 
@@ -159,6 +159,34 @@ GlacierVault/
 | 4 | リリース準備（プライバシーマニフェスト、App Privacy、TestFlight、審査対応） | 2週 |
 
 審査上の注意: 写真フルアクセス＋バックグラウンド動作＋ストレージ課金は審査で説明を求められやすい。App Review向けメモ（用途説明・デモアカウント）を用意する。
+
+## 実装状況（2026-07-24 自律作業分）
+
+### 完了（feature/ios-plan-phase0 ブランチ）
+- **Phase 0 全項目**: 統計バグ修正 / cleanupJob稼働 / 本番シークレット必須化 /
+  ブレインストーミング残骸削除 / 認可コード+PKCE化（トークンURL渡し廃止）
+- **Phase 1 全項目**: プリサインドマルチパートAPI（/api/uploads/init|complete|abort、
+  100MB上限撤廃、容量クォータ強制）/ ティア制（config/tiers.ts、DBカラム、Stripe固定Price、
+  プラン選択UI、GET /api/billing/tiers）/ 復元無料枠（月間5%・Bulk）+ Stripe超過課金 + restore_logs
+- **Sign in with Apple**: バックエンドJWKS検証（POST /api/auth/apple、要 APPLE_BUNDLE_ID）+ iOSボタン
+- **iOS（Phase 2の一部）**: PKCE認証（ASWebAuthenticationSession+Keychain）/
+  認証付きAPIClient（自動リフレッシュ）/ プリサインドアップロード / ログイン画面 /
+  BackupManager（台帳+差分スキャン+WiFi限定+オリジナル品質アップロード）/
+  BackupView / FilesBackupManager+View（フォルダ選択バックアップ）/
+  ATS修正・URLスキーム追加 / pbxproj整備（DesignSystem.swift未登録バグも修正）
+- バックエンド・フロントエンドのビルド検証済み（Swiftはmac環境がないため未コンパイル）
+
+### 未実装・ユーザー対応が必要
+- **Apple Developer設定**: バンドルID確定、Sign in with Apple entitlement、
+  IAP商品登録（com.glacierphotovault.tier.*）、APNs鍵
+- **StoreKit 2クライアント + App Store Server Notifications**（Apple課金）
+- **iOS 26.1 PHBackgroundResourceUploadExtension** のextensionターゲット追加とスパイク
+  （Xcode/実機必要。iCloud写真ON端末で動かない報告の検証が最優先）
+- **S3バケットCORS適用**（docs/S3_CORS_SETUP.md）
+- **Render環境変数**: JWT_SECRET/SESSION_SECRET必須化に伴う設定確認、APPLE_BUNDLE_ID追加
+- **既存Stripeサブスクの移行**: 既存ユーザーの従量制サブスクをティアPriceへ移行するバッチ
+- 復元超過分のiOS側支払い（消耗型IAP「復元パック」）— 現状iOSは無料枠内のみ復元可
+- プッシュ通知（復元完了）、STSスコープ付きクレデンシャル分離
 
 ## 5. 保留・将来検討
 

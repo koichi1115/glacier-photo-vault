@@ -81,6 +81,11 @@ struct BackupView: View {
                 // 設定
                 Section {
                     Toggle("WiFi接続時のみバックアップ", isOn: $backup.wifiOnly)
+                    NavigationLink {
+                        FilesBackupView()
+                    } label: {
+                        Label("「ファイル」フォルダのバックアップ", systemImage: "folder")
+                    }
                 } header: {
                     Text("設定")
                 } footer: {

@@ -17,6 +17,8 @@
 		BKUP000001 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKUP000002 /* DesignSystem.swift */; };
 		BKUP000003 /* BackupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKUP000004 /* BackupManager.swift */; };
 		BKUP000005 /* BackupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKUP000006 /* BackupView.swift */; };
+		BKUP000007 /* FilesBackupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKUP000008 /* FilesBackupManager.swift */; };
+		BKUP000009 /* FilesBackupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKUP000010 /* FilesBackupView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +34,8 @@
 		BKUP000002 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		BKUP000004 /* BackupManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManager.swift; sourceTree = "<group>"; };
 		BKUP000006 /* BackupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupView.swift; sourceTree = "<group>"; };
+		BKUP000008 /* FilesBackupManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesBackupManager.swift; sourceTree = "<group>"; };
+		BKUP000010 /* FilesBackupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesBackupView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,6 +70,8 @@
 				BKUP000002 /* DesignSystem.swift */,
 				BKUP000004 /* BackupManager.swift */,
 				BKUP000006 /* BackupView.swift */,
+				BKUP000008 /* FilesBackupManager.swift */,
+				BKUP000010 /* FilesBackupView.swift */,
 				MAIN000016 /* Info.plist */,
 			);
 			path = GlacierPhotoVault;
@@ -152,6 +158,8 @@
 				BKUP000001 /* DesignSystem.swift in Sources */,
 				BKUP000003 /* BackupManager.swift in Sources */,
 				BKUP000005 /* BackupView.swift in Sources */,
+				BKUP000007 /* FilesBackupManager.swift in Sources */,
+				BKUP000009 /* FilesBackupView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
