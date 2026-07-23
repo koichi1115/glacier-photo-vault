@@ -207,21 +207,41 @@ GET    /api/photos/:photoId/download          # ダウンロードURL取得
 GET    /api/photos/user/:userId/stats         # 統計情報
 ```
 
-## 💰 コスト見積もり
+### 直接アップロード（プリサインドURL・大容量対応）
 
-### ストレージコスト（Glacier Deep Archive）
+```
+POST   /api/uploads/init                      # アップロードURL発行（単一/マルチパート）
+POST   /api/uploads/complete                  # 完了・メタデータ記録
+POST   /api/uploads/abort                     # マルチパート中断
+```
 
-- 約 $0.00099 / GB / 月
-- 100GBの写真: 約 $0.10 / 月
+### 認証・課金
 
-### 復元コスト
+```
+GET    /api/auth/google | /api/auth/line      # OAuth開始（PKCE対応）
+POST   /api/auth/apple                        # Sign in with Apple
+POST   /api/auth/token                        # 認可コード→トークン交換
+GET    /api/billing/tiers                     # 料金ティア一覧
+```
 
-- **Standard（12時間）**: 約 $0.02 / GB
-- **Bulk（48時間）**: 約 $0.0025 / GB
+## 💰 料金プラン（ティア制）
 
-### データ転送コスト
+| ティア | 容量 | 月額 |
+|---|---|---|
+| Mini | 200GB | ¥150 |
+| Standard | 1TB | ¥400 |
+| Plus | 2TB | ¥700 |
+| Max | 5TB | ¥1,500 |
 
-- ダウンロード: 最初の1GB無料、その後 $0.09 / GB
+- 30日間無料トライアル
+- データ復元（Bulk 48h）: 月間 契約容量の5%まで無料、超過 ¥20/GB
+- データ復元（Standard 12h）: ¥30/GB
+
+### 原価参考（AWS）
+
+- 保管: 約 $0.00099 / GB / 月（Glacier Deep Archive）
+- 復元: Standard 約 $0.02 / GB、Bulk 約 $0.0025 / GB
+- データ転送（ダウンロード）: 約 $0.09 / GB
 
 ## 🛡️ セキュリティ
 
