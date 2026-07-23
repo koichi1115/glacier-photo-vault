@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import pool from '../db';
+import { StorageTier } from '../config/tiers';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 
@@ -9,6 +10,9 @@ export interface Subscription {
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'incomplete';
+  platform: 'stripe' | 'apple';
+  tier: string | null;
+  storageLimitBytes: number | null;
   trialStart: number | null;
   trialEnd: number | null;
   currentPeriodStart: number | null;
@@ -64,7 +68,7 @@ export class StripeService {
     // Create new product
     const product = await this.stripe.products.create({
       name: 'Glacier Photo Vault ストレージ',
-      description: '超低コスト写真保管サービス - 従量課金 ¥10/GB/月',
+      description: '超低コスト写真保管サービス - 定額ティア制',
     });
 
     this.productId = product.id;
@@ -118,31 +122,31 @@ export class StripeService {
   }
 
   /**
-   * Create a subscription with trial period
+   * ティア制サブスクリプションをトライアル付きで作成する。
+   * tier.stripePriceId が設定されていればそのPriceを使用し、
+   * 未設定なら価格をインラインで作成する（同一Product配下）。
    */
   async createSubscription(
     customerId: string,
+    tier: StorageTier,
     trialDays: number = 30,
     couponId?: string
   ): Promise<Stripe.Subscription> {
-    // Get or create product first
-    const productId = await this.getOrCreateProduct();
+    const item: Stripe.SubscriptionCreateParams.Item = tier.stripePriceId
+      ? { price: tier.stripePriceId }
+      : {
+          price_data: {
+            currency: 'jpy',
+            product: await this.getOrCreateProduct(),
+            recurring: { interval: 'month' },
+            unit_amount: tier.priceJpy,
+          },
+        };
 
     const subscriptionParams: Stripe.SubscriptionCreateParams = {
       customer: customerId,
-      items: [
-        {
-          // Usage-based pricing - we'll add invoice items for storage usage
-          price_data: {
-            currency: 'jpy',
-            product: productId, // Use product ID instead of product_data
-            recurring: {
-              interval: 'month',
-            },
-            unit_amount: 0, // Base is 0, usage charges added separately
-          },
-        },
-      ],
+      items: [item],
+      metadata: { tier: tier.id },
       trial_period_days: trialDays,
       payment_behavior: 'default_incomplete',
       payment_settings: {
@@ -173,20 +177,18 @@ export class StripeService {
   }
 
   /**
-   * Add usage charges to a customer's next invoice
+   * 復元超過分の従量課金を次回請求書に追加する
    */
-  async addUsageCharge(
+  async addRestoreCharge(
     customerId: string,
-    storageGB: number,
-    pricePerGB: number = 10
+    amountJpy: number,
+    description: string
   ): Promise<Stripe.InvoiceItem> {
-    const amount = Math.ceil(storageGB * pricePerGB);
-
     return await this.stripe.invoiceItems.create({
       customer: customerId,
-      amount,
+      amount: amountJpy,
       currency: 'jpy',
-      description: `ストレージ使用料 ${storageGB.toFixed(2)}GB × ¥${pricePerGB}/GB`,
+      description,
     });
   }
 

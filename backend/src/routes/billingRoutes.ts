@@ -2,8 +2,25 @@ import express, { Request, Response } from 'express';
 import { authenticateJWT } from '../middleware/auth';
 import { billingService } from '../services/BillingService';
 import { stripeService } from '../services/StripeService';
+import { TIERS, getTier } from '../config/tiers';
 
 const router = express.Router();
+
+/**
+ * GET /api/billing/tiers
+ * 料金ティア一覧（認証不要・料金表表示用）
+ */
+router.get('/tiers', (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    tiers: Object.values(TIERS).map((t) => ({
+      id: t.id,
+      name: t.name,
+      priceJpy: t.priceJpy,
+      storageLimitBytes: t.storageLimitBytes,
+    })),
+  });
+});
 
 /**
  * POST /api/billing/setup-intent
@@ -32,22 +49,28 @@ router.post('/setup-intent', authenticateJWT, async (req: Request, res: Response
 router.post('/confirm-card', authenticateJWT, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
-    const { paymentMethodId, couponCode } = req.body;
+    const { paymentMethodId, couponCode, tier } = req.body;
 
     if (!paymentMethodId) {
       return res.status(400).json({ error: 'paymentMethodId is required' });
+    }
+    if (tier && !getTier(tier)) {
+      return res.status(400).json({ error: `Unknown tier: ${tier}` });
     }
 
     const subscription = await billingService.confirmCardAndStartTrial(
       userId,
       paymentMethodId,
-      couponCode
+      couponCode,
+      tier
     );
 
     res.json({
       success: true,
       subscription: {
         status: subscription.status,
+        tier: subscription.tier,
+        storageLimitBytes: subscription.storageLimitBytes,
         trialEnd: subscription.trialEnd,
       },
     });
@@ -80,6 +103,9 @@ router.get('/subscription', authenticateJWT, async (req: Request, res: Response)
       success: true,
       subscription: {
         status: subscription.status,
+        platform: subscription.platform,
+        tier: subscription.tier,
+        storageLimitBytes: subscription.storageLimitBytes,
         trialStart: subscription.trialStart,
         trialEnd: subscription.trialEnd,
         currentPeriodStart: subscription.currentPeriodStart,

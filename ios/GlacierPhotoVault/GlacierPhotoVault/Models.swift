@@ -90,7 +90,7 @@ struct APIResponse<T: Codable>: Codable {
 struct PhotosResponse: Codable {
     let success: Bool
     let photos: [Photo]
-    let count: Int
+    let count: Int?
 }
 
 struct PhotoResponse: Codable {
@@ -106,19 +106,113 @@ struct StatsResponse: Codable {
 
 struct RestoreResponse: Codable {
     let success: Bool
-    let message: String
-    let tier: String
-    let estimatedHours: Int
+    let message: String?
+    let tier: String?
+    let estimatedHours: Int?
 }
 
 struct StatusResponse: Codable {
     let success: Bool
-    let photoId: String
+    let photoId: String?
     let status: PhotoStatus
 }
 
 struct DownloadResponse: Codable {
     let success: Bool
     let downloadUrl: String
-    let expiresIn: Int
+    let expiresIn: Int?
+}
+
+// MARK: - Auth
+
+struct TokenResponse: Codable {
+    let accessToken: String
+    let refreshToken: String
+}
+
+struct AuthUser: Codable {
+    let userId: String
+    let email: String?
+    let provider: String?
+    let displayName: String?
+    let profilePhoto: String?
+}
+
+struct MeResponse: Codable {
+    let user: AuthUser
+}
+
+struct APIErrorBody: Codable {
+    let error: String?
+    let message: String?
+}
+
+struct SuccessResponse: Codable {
+    let success: Bool
+}
+
+// MARK: - Direct upload (presigned)
+
+struct UploadInitRequest: Codable {
+    let fileName: String
+    let relativePath: String?
+    let size: Int
+    let mimeType: String
+}
+
+struct UploadPartURL: Codable {
+    let partNumber: Int
+    let url: String
+}
+
+struct UploadInitResponse: Codable {
+    let success: Bool
+    let uploadType: String // "single" | "multipart"
+    let key: String
+    let url: String?
+    let requiredHeaders: [String: String]?
+    let uploadId: String?
+    let partSize: Int?
+    let partUrls: [UploadPartURL]?
+}
+
+struct UploadPartETag: Codable {
+    let partNumber: Int
+    let etag: String
+}
+
+struct UploadCompleteRequest: Codable {
+    let key: String
+    let uploadId: String?
+    let parts: [UploadPartETag]?
+    let fileName: String
+    let mimeType: String
+    let title: String?
+    let description: String?
+    let tags: [String]
+    let thumbnail: String?
+}
+
+struct UploadAbortRequest: Codable {
+    let key: String
+    let uploadId: String
+}
+
+// MARK: - Billing
+
+struct SubscriptionInfo: Codable {
+    let status: String
+    let platform: String?
+    let tier: String?
+    let storageLimitBytes: Int64?
+    let trialEnd: Int64?
+    let currentPeriodEnd: Int64?
+}
+
+struct SubscriptionResponse: Codable {
+    let success: Bool
+    let subscription: SubscriptionInfo?
+    let hasSubscription: Bool
+    let isValid: Bool?
+    let trialDaysRemaining: Int?
 }

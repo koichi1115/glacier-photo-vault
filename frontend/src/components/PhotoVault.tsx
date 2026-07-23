@@ -380,22 +380,14 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
           currentFile: relativePath,
         });
 
-        const formData = new FormData();
-        formData.append('photo', file);
-        formData.append('userId', userId);
-        formData.append('title', title || relativePath);
-        formData.append('relativePath', relativePath);
-        formData.append('description', description);
-        formData.append('tags', JSON.stringify(tags.split(',').map(t => t.trim()).filter(t => t)));
-
-        // サムネイルがあれば送信
-        const thumbnail = thumbnails[file.name];
-        if (thumbnail) {
-          formData.append('thumbnail', thumbnail);
-        }
-
         try {
-          await api.uploadPhoto(formData);
+          await api.uploadFileDirect(file, {
+            relativePath,
+            title: title || relativePath,
+            description,
+            tags: tags.split(',').map(t => t.trim()).filter(t => t),
+            thumbnail: thumbnails[file.name],
+          });
           successCount++;
         } catch (error) {
           console.error('Upload error:', error);
@@ -625,11 +617,12 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
+  // ユーザー向け復元価格（Bulkは月間 契約容量5%まで無料、超過分¥20/GB / Standardは¥30/GB）
   const calculateRestoreCost = (bytes: number, tier: 'standard' | 'bulk') => {
     const gb = bytes / (1024 * 1024 * 1024);
-    const costPerGb = tier === 'standard' ? 0.02 : 0.0025;
-    const cost = gb * costPerGb;
-    return cost < 0.01 ? '< $0.01' : `$${cost.toFixed(2)}`;
+    const costPerGb = tier === 'standard' ? 30 : 20;
+    const cost = Math.ceil(gb * costPerGb);
+    return cost < 1 ? '¥0〜' : `¥${cost.toLocaleString()}`;
   };
 
   const getStatusLabel = (status: PhotoStatus): string => {
@@ -789,18 +782,20 @@ export const PhotoVault: React.FC<PhotoVaultProps> = ({ userId }) => {
                 tickFormatter={(value) => `${value.toFixed(0)} MB`}
               />
               <Tooltip
-                formatter={(value: number | undefined, name: string | undefined) => {
-                  if (value === undefined) return ['N/A', name || ''];
-                  if (name === 'sizeInMB') {
-                    return [`${value.toFixed(2)} MB`, '容量'];
+                formatter={(value: unknown, name: unknown): [string, string] => {
+                  const label = String(name ?? '');
+                  const num = typeof value === 'number' ? value : Number(value);
+                  if (!Number.isFinite(num)) return ['N/A', label];
+                  if (label === 'sizeInMB') {
+                    return [`${num.toFixed(2)} MB`, '容量'];
                   }
-                  if (name === 'photoCount') {
-                    return [`${value}件`, 'ファイル数'];
+                  if (label === 'photoCount') {
+                    return [`${num}件`, 'ファイル数'];
                   }
-                  return [value.toString(), name || ''];
+                  return [String(num), label];
                 }}
                 labelFormatter={(label) => {
-                  const [year, month] = label.split('-');
+                  const [year, month] = String(label ?? '').split('-');
                   return `${year}年${month}月`;
                 }}
               />

@@ -149,8 +149,15 @@ struct UploadPhotoView: View {
         isUploading = true
 
         Task {
-            await viewModel.uploadPhoto(
-                image: image,
+            guard let data = image.jpegData(compressionQuality: 0.9) else {
+                isUploading = false
+                return
+            }
+            let fileName = "photo_\(Int(Date().timeIntervalSince1970)).jpg"
+            await viewModel.uploadFile(
+                data: data,
+                fileName: fileName,
+                mimeType: "image/jpeg",
                 title: title.isEmpty ? nil : title,
                 description: description.isEmpty ? nil : description,
                 tags: tags

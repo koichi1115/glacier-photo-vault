@@ -3,10 +3,10 @@ import multer from 'multer';
 import multerS3 from 'multer-s3';
 import { S3Client } from '@aws-sdk/client-s3';
 import { GlacierPhotoService } from '../services/GlacierPhotoService';
+import { billingService } from '../services/BillingService';
 import { authenticateJWT } from '../middleware/auth';
 import { authorizePhotoOwner, authorizeOwner } from '../middleware/authorize';
 import { requireSubscription } from '../middleware/requireSubscription';
-import { PhotoStatus } from '@glacier-photo-vault/shared';
 
 const router = express.Router();
 const glacierService = new GlacierPhotoService();
@@ -155,13 +155,32 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const photoId = req.params.photoId;
-      const { tier } = req.body;
+      const userId = req.user!.userId;
+      const tier: 'Standard' | 'Bulk' = req.body.tier === 'Standard' ? 'Standard' : 'Bulk';
+
+      const photo = await glacierService.getPhoto(photoId);
+      if (!photo) {
+        return res.status(404).json({ error: 'Photo not found' });
+      }
+
+      // 復元の無料枠（月間 契約容量5%・Bulkのみ）と超過課金の判定
+      const auth = await billingService.authorizeRestore(userId, photo.size, tier);
+      if (!auth.allowed) {
+        return res.status(402).json({
+          error: auth.reason || 'RESTORE_PAYMENT_REQUIRED',
+          message:
+            '今月の無料復元枠を超えています。超過分の復元にはWeb版でのお支払いが必要です。',
+          chargeJpy: auth.chargeJpy,
+        });
+      }
+
       await glacierService.requestRestore(photoId, tier);
+      await billingService.recordRestore(userId, photoId, photo.size, tier, auth.chargeJpy);
 
       // Calculate estimated hours
       const estimatedHours = tier === 'Bulk' ? 48 : 12;
 
-      res.json({ success: true, estimatedHours });
+      res.json({ success: true, estimatedHours, chargeJpy: auth.chargeJpy });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

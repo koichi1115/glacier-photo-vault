@@ -8,6 +8,101 @@
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var auth = AuthManager.shared
+
+    var body: some View {
+        if auth.isAuthenticated {
+            VaultView()
+        } else {
+            LoginView()
+        }
+    }
+}
+
+// MARK: - Login
+
+struct LoginView: View {
+    @StateObject private var auth = AuthManager.shared
+    @State private var isSigningIn = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        VStack(spacing: DADSSpacing.xl) {
+            Spacer()
+
+            Image(systemName: "archivebox.fill")
+                .font(.system(size: 72))
+                .foregroundColor(DADSColor.primary)
+
+            VStack(spacing: DADSSpacing.xs) {
+                Text("Glacier Photo Vault")
+                    .font(DADSTypography.title1)
+                    .foregroundColor(DADSColor.textPrimary)
+                Text("超低コストの写真・ファイル長期保管")
+                    .font(DADSTypography.caption)
+                    .foregroundColor(DADSColor.textSecondary)
+            }
+
+            Spacer()
+
+            VStack(spacing: DADSSpacing.md) {
+                Button {
+                    signIn(.google)
+                } label: {
+                    Label("Googleでログイン", systemImage: "globe")
+                        .font(DADSTypography.body.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(DADSSpacing.md)
+                        .background(DADSColor.primary)
+                        .foregroundColor(.white)
+                        .cornerRadius(DADSRadius.medium)
+                }
+
+                Button {
+                    signIn(.line)
+                } label: {
+                    Label("LINEでログイン", systemImage: "message.fill")
+                        .font(DADSTypography.body.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(DADSSpacing.md)
+                        .background(Color(red: 0.0, green: 0.72, blue: 0.36))
+                        .foregroundColor(.white)
+                        .cornerRadius(DADSRadius.medium)
+                }
+            }
+            .padding(.horizontal, DADSSpacing.xl)
+            .disabled(isSigningIn)
+
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(DADSTypography.caption)
+                    .foregroundColor(DADSColor.error)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DADSSpacing.xl)
+            }
+
+            Spacer()
+        }
+        .background(DADSColor.backgroundGray.ignoresSafeArea())
+    }
+
+    private func signIn(_ provider: AuthProvider) {
+        isSigningIn = true
+        errorMessage = nil
+        Task {
+            do {
+                try await auth.signIn(provider: provider)
+            } catch {
+                errorMessage = "ログインに失敗しました。もう一度お試しください。"
+            }
+            isSigningIn = false
+        }
+    }
+}
+
+// MARK: - Vault (main)
+
+struct VaultView: View {
     @StateObject private var viewModel = PhotoViewModel()
     @State private var showingUploadSheet = false
 
@@ -76,6 +171,13 @@ struct ContentView: View {
             .navigationTitle("写真保管庫")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("ログアウト") {
+                        AuthManager.shared.signOut()
+                    }
+                    .font(DADSTypography.caption)
+                    .foregroundColor(DADSColor.textSecondary)
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showingUploadSheet = true }) {
                         Image(systemName: "plus.circle.fill")

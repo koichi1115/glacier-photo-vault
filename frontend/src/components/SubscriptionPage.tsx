@@ -24,6 +24,18 @@ interface SubscriptionPageProps {
   onSubscriptionComplete: () => void;
 }
 
+interface TierInfo {
+  id: string;
+  name: string;
+  priceJpy: number;
+  storageLimitBytes: number;
+}
+
+const formatStorage = (bytes: number): string => {
+  const gb = bytes / (1024 * 1024 * 1024);
+  return gb >= 1024 ? `${Math.round(gb / 1024)}TB` : `${Math.round(gb)}GB`;
+};
+
 const CheckoutForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -37,6 +49,8 @@ const CheckoutForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
     discountPercent: number | null;
     discountAmount: number | null;
   } | null>(null);
+  const [tiers, setTiers] = useState<TierInfo[]>([]);
+  const [selectedTier, setSelectedTier] = useState<string>('mini');
 
   useEffect(() => {
     // SetupIntent を作成
@@ -53,7 +67,20 @@ const CheckoutForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
       }
     };
 
+    // ティア一覧を取得
+    const loadTiers = async () => {
+      try {
+        const result = await api.getTiers();
+        if (result.success) {
+          setTiers(result.tiers);
+        }
+      } catch (err) {
+        console.error('Failed to load tiers:', err);
+      }
+    };
+
     initSetup();
+    loadTiers();
   }, []);
 
   const handleValidateCoupon = async () => {
@@ -114,7 +141,8 @@ const CheckoutForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
       // カード確認してトライアル開始
       const result = await api.confirmCard(
         setupIntent.payment_method as string,
-        couponValid ? couponCode : undefined
+        couponValid ? couponCode : undefined,
+        selectedTier
       );
 
       if (result.success) {
@@ -149,12 +177,38 @@ const CheckoutForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* プラン選択 */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          プランを選択
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {tiers.map((tier) => (
+            <button
+              key={tier.id}
+              type="button"
+              onClick={() => setSelectedTier(tier.id)}
+              className={`p-3 rounded-lg border-2 text-left transition-colors box-border ${
+                selectedTier === tier.id
+                  ? 'border-blue-600 bg-blue-50'
+                  : 'border-gray-200 bg-white hover:border-gray-300'
+              }`}
+            >
+              <div className="font-semibold text-gray-900">{tier.name}</div>
+              <div className="text-sm text-gray-600">{formatStorage(tier.storageLimitBytes)}</div>
+              <div className="text-lg font-bold text-blue-700 mt-1">
+                ¥{tier.priceJpy.toLocaleString()}
+                <span className="text-xs font-normal text-gray-500">/月</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* 料金説明 */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="font-semibold text-blue-900 mb-2">料金プラン</h3>
         <ul className="text-sm text-blue-800 space-y-1">
           <li>・30日間無料トライアル</li>
-          <li>・従量課金：¥10/GB/月</li>
           <li>・いつでも解約可能</li>
         </ul>
         {couponValid && couponInfo && (

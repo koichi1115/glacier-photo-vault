@@ -3,31 +3,32 @@ import './env';
 
 import express from 'express';
 import { createServer } from 'http';
-import { Server } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import session from 'express-session';
 import passport from './config/passport';
-import { SessionManager } from './services/SessionManager';
-import { setupSocketHandlers } from './socket/handlers';
 import photoRoutes from './routes/photoRoutes';
+import uploadRoutes from './routes/uploadRoutes';
 import authRoutes from './routes/authRoutes';
 import billingRoutes from './routes/billingRoutes';
 import webhookRoutes from './routes/webhookRoutes';
 import { initDb } from './db';
+import { scheduleCleanupJob } from './jobs/cleanupJob';
+
+// 本番環境ではシークレットの未設定を起動エラーにする
+if (process.env.NODE_ENV === 'production') {
+  const missing = ['JWT_SECRET', 'SESSION_SECRET'].filter((k) => !process.env[k]);
+  if (missing.length > 0) {
+    throw new Error(`Missing required environment variables in production: ${missing.join(', ')}`);
+  }
+}
 
 const app = express();
 
 // Trust proxy - Required for Render.com deployment
 app.set('trust proxy', 1);
 const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST']
-  }
-});
 
 // ============================================================
 // TIER 2: セキュリティミドルウェア
@@ -141,18 +142,14 @@ app.use('/api/auth', authLimiter, authRoutes);
 // 写真ストレージルート（アップロード専用レート制限）
 app.use('/api/photos', uploadLimiter, photoRoutes);
 
+// プリサインドURL直接アップロードルート
+app.use('/api/uploads', uploadLimiter, uploadRoutes);
+
 // 課金ルート
 app.use('/api/billing', generalLimiter, billingRoutes);
 
 // Stripeウェブフック（express.jsonより前に設定する必要があるため、webhookRoutes内でraw parserを使用）
 app.use('/api/webhook', webhookRoutes);
-
-
-// Initialize session manager
-const sessionManager = new SessionManager();
-
-// Setup WebSocket handlers
-setupSocketHandlers(io, sessionManager);
 
 // ============================================================
 // サーバー起動
@@ -164,6 +161,9 @@ const PORT = process.env.PORT || 3000;
 
 // Initialize Database
 initDb().then(() => {
+  // 支払い失敗ユーザーの猶予期限後データ削除（日次）
+  scheduleCleanupJob(24);
+
   httpServer.listen(PORT, () => {
     console.log(`🔒 Glacier Photo Vault Server running on port ${PORT}`);
     console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
