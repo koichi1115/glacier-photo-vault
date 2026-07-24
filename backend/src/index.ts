@@ -15,7 +15,9 @@ import authRoutes from './routes/authRoutes';
 import billingRoutes from './routes/billingRoutes';
 import webhookRoutes from './routes/webhookRoutes';
 import { initDb } from './db';
+import deviceRoutes from './routes/deviceRoutes';
 import { scheduleCleanupJob } from './jobs/cleanupJob';
+import { scheduleRestoreCheckJob } from './jobs/restoreCheckJob';
 
 // 本番環境ではシークレットの未設定を起動エラーにする
 if (process.env.NODE_ENV === 'production') {
@@ -149,6 +151,9 @@ app.use('/api/uploads', uploadLimiter, uploadRoutes);
 // STSスコープ付き一時クレデンシャル
 app.use('/api/credentials', generalLimiter, credentialRoutes);
 
+// プッシュ通知デバイス登録
+app.use('/api/devices', generalLimiter, deviceRoutes);
+
 // 課金ルート
 app.use('/api/billing', generalLimiter, billingRoutes);
 
@@ -167,6 +172,9 @@ const PORT = process.env.PORT || 3000;
 initDb().then(() => {
   // 支払い失敗ユーザーの猶予期限後データ削除（日次）
   scheduleCleanupJob(24);
+
+  // 復元完了の検知とプッシュ通知（15分毎）
+  scheduleRestoreCheckJob(15);
 
   httpServer.listen(PORT, () => {
     console.log(`🔒 Glacier Photo Vault Server running on port ${PORT}`);

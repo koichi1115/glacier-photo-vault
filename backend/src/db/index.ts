@@ -99,6 +99,19 @@ export const initDb = async () => {
       ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS apple_original_transaction_id TEXT
     `);
 
+    // プッシュ通知用デバイストークン
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS device_tokens (
+        token TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        platform TEXT DEFAULT 'ios',
+        created_at BIGINT NOT NULL
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_device_tokens_user ON device_tokens (user_id)
+    `);
+
     // 復元リクエストのログ（月間無料枠の消費計算と超過課金の記録）
     await client.query(`
       CREATE TABLE IF NOT EXISTS restore_logs (

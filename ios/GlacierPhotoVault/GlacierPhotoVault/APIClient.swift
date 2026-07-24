@@ -413,6 +413,28 @@ final class APIClient {
     func getSubscription() async throws -> SubscriptionResponse {
         try await getJSON("/api/billing/subscription")
     }
+
+    func getTiers() async throws -> TiersResponse {
+        // 認証不要の公開エンドポイント
+        let (data, response) = try await URLSession.shared.data(
+            from: baseURL.appendingPathComponent("/api/billing/tiers")
+        )
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            throw APIError.serverError
+        }
+        return try JSONDecoder().decode(TiersResponse.self, from: data)
+    }
+
+    /// StoreKit 2の署名付きトランザクションをサーバーに送って検証・同期する
+    func syncAppleTransaction(signedTransaction: String) async throws -> SubscriptionResponse {
+        try await postJSON("/api/billing/apple/transaction", body: ["signedTransaction": signedTransaction])
+    }
+
+    // MARK: Push notifications
+
+    func registerDevice(token: String) async throws {
+        let _: SuccessResponse = try await postJSON("/api/devices", body: ["token": token, "platform": "ios"])
+    }
 }
 
 // MARK: - Errors

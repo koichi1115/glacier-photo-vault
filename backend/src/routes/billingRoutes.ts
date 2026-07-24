@@ -160,6 +160,40 @@ router.post('/coupon/validate', authenticateJWT, async (req: Request, res: Respo
 });
 
 /**
+ * POST /api/billing/apple/transaction
+ * StoreKit 2の署名付きトランザクションを検証してサブスクリプションを同期
+ * Body: { signedTransaction: string }
+ */
+router.post('/apple/transaction', authenticateJWT, async (req: Request, res: Response) => {
+  try {
+    const { signedTransaction } = req.body;
+    if (!signedTransaction || typeof signedTransaction !== 'string') {
+      return res.status(400).json({ error: 'BadRequest', message: 'signedTransaction is required' });
+    }
+
+    const { verifySignedTransaction, syncAppleSubscription } = await import(
+      '../services/AppleTransactionService'
+    );
+    const payload = await verifySignedTransaction(signedTransaction);
+    const subscription = await syncAppleSubscription(req.user!.userId, payload);
+
+    res.json({
+      success: true,
+      subscription: {
+        status: subscription.status,
+        platform: subscription.platform,
+        tier: subscription.tier,
+        storageLimitBytes: subscription.storageLimitBytes,
+        currentPeriodEnd: subscription.currentPeriodEnd,
+      },
+    });
+  } catch (error: any) {
+    console.error('Apple transaction sync error:', error.message);
+    res.status(400).json({ error: 'InvalidTransaction', message: error.message });
+  }
+});
+
+/**
  * POST /api/billing/cancel
  * Cancel subscription
  */

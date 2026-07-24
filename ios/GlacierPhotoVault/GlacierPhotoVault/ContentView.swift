@@ -10,12 +10,39 @@ import AuthenticationServices
 
 struct ContentView: View {
     @StateObject private var auth = AuthManager.shared
+    @State private var subscriptionValid: Bool?
 
     var body: some View {
-        if auth.isAuthenticated {
-            VaultView()
-        } else {
-            LoginView()
+        Group {
+            if !auth.isAuthenticated {
+                LoginView()
+            } else if subscriptionValid == true {
+                VaultView()
+            } else if subscriptionValid == false {
+                PaywallView {
+                    subscriptionValid = true
+                }
+            } else {
+                ProgressView("確認中...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(DADSColor.backgroundGray.ignoresSafeArea())
+            }
+        }
+        .task(id: auth.isAuthenticated) {
+            guard auth.isAuthenticated else {
+                subscriptionValid = nil
+                return
+            }
+            // 復元完了通知のためのプッシュ許可（初回のみダイアログ表示）
+            AppDelegate.requestPushAuthorization()
+
+            do {
+                let res = try await APIClient.shared.getSubscription()
+                subscriptionValid = res.hasSubscription && (res.isValid ?? false)
+            } catch {
+                // 確認に失敗した場合は利用をブロックしない（サーバー側でも強制される）
+                subscriptionValid = true
+            }
         }
     }
 }

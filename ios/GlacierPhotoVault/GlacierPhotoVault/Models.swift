@@ -209,6 +209,18 @@ struct SubscriptionInfo: Codable {
     let currentPeriodEnd: Int64?
 }
 
+struct TierInfoModel: Codable, Identifiable {
+    let id: String
+    let name: String
+    let priceJpy: Int
+    let storageLimitBytes: Int64
+}
+
+struct TiersResponse: Codable {
+    let success: Bool
+    let tiers: [TierInfoModel]
+}
+
 struct SubscriptionResponse: Codable {
     let success: Bool
     let subscription: SubscriptionInfo?
