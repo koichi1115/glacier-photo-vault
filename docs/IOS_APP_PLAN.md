@@ -176,17 +176,30 @@ GlacierVault/
   ATS修正・URLスキーム追加 / pbxproj整備（DesignSystem.swift未登録バグも修正）
 - バックエンド・フロントエンドのビルド検証済み（Swiftはmac環境がないため未コンパイル）
 
+### 追加実装（2026-07-25分）
+- **復元完了通知**: 復元中写真の15分毎ポーリングジョブ、APNs送信サービス
+  （HTTP/2直叩き・依存なし）、device_tokens登録API、iOS側のプッシュ登録・表示
+- **StoreKit 2**: StoreKitManager（購入/復元/Transaction.updates監視）、PaywallView、
+  サブスク有効性でVaultをゲート。バックエンドはJWS x5cチェーンをApple Root CA G3まで
+  検証して subscriptions に同期（POST /api/billing/apple/transaction）
+- **STSスコープ付きクレデンシャル** (`POST /api/credentials`、要 AWS_UPLOAD_ROLE_ARN)
+- **テスト基盤**: Vitest導入、ティア設定と復元クォータ判定の13テスト（`npm test`）
+- **Stripe移行スクリプト**: `npm run migrate:tiers`（ドライラン既定、--applyで実行）
+
 ### 未実装・ユーザー対応が必要
-- **Apple Developer設定**: バンドルID確定、Sign in with Apple entitlement、
-  IAP商品登録（com.glacierphotovault.tier.*）、APNs鍵
-- **StoreKit 2クライアント + App Store Server Notifications**（Apple課金）
+- **Apple Developer設定**: バンドルID確定（コードは `com.glacierphotovault.*` 前提）、
+  Sign in with Apple / Push Notifications entitlement、IAP商品登録
+  （com.glacierphotovault.tier.mini|standard|plus|max）、APNs Auth Key（.p8）
+- **Render環境変数**: JWT_SECRET / SESSION_SECRET（必須化済み）、APPLE_BUNDLE_ID、
+  APNS_KEY_ID / APNS_TEAM_ID / APNS_PRIVATE_KEY / APNS_ENV、（任意）AWS_UPLOAD_ROLE_ARN
 - **iOS 26.1 PHBackgroundResourceUploadExtension** のextensionターゲット追加とスパイク
   （Xcode/実機必要。iCloud写真ON端末で動かない報告の検証が最優先）
+- **Xcodeでの初回ビルド確認**（Swift一式はWindows環境のため未コンパイル）
 - **S3バケットCORS適用**（docs/S3_CORS_SETUP.md）
-- **Render環境変数**: JWT_SECRET/SESSION_SECRET必須化に伴う設定確認、APPLE_BUNDLE_ID追加
-- **既存Stripeサブスクの移行**: 既存ユーザーの従量制サブスクをティアPriceへ移行するバッチ
+- **既存Stripeサブスクの移行実行**（`npm run migrate:tiers` → 確認後 `--apply`）
+- App Store Server Notifications V2 webhook（現状はアプリ起動時の
+  Transaction.currentEntitlements 同期でカバー。解約即時反映が必要になったら追加）
 - 復元超過分のiOS側支払い（消耗型IAP「復元パック」）— 現状iOSは無料枠内のみ復元可
-- プッシュ通知（復元完了）、STSスコープ付きクレデンシャル分離
 
 ## 5. 保留・将来検討
 
