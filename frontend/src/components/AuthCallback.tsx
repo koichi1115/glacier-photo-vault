@@ -9,15 +9,14 @@ export const AuthCallback: React.FC = () => {
         const handleCallback = async () => {
             try {
                 const params = new URLSearchParams(window.location.search);
-                const accessToken = params.get('access_token');
-                const refreshToken = params.get('refresh_token');
+                const code = params.get('code');
 
-                if (!accessToken || !refreshToken) {
-                    throw new Error('No tokens received');
+                if (!code) {
+                    throw new Error('No authorization code received');
                 }
 
-                // Store tokens
-                api.setTokens(accessToken, refreshToken);
+                // Exchange one-time code for tokens (tokens never appear in the URL)
+                await api.exchangeCode(code);
 
                 // Fetch user info
                 setStatus('Fetching user info...');

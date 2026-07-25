@@ -245,24 +245,32 @@ export const UsageDashboard: React.FC = () => {
 
         <div className="space-y-3 text-sm">
           <div className="flex justify-between items-center">
-            <span className="text-gray-700">ストレージ保管料</span>
-            <span className="font-semibold text-gray-900">¥10/GB/月</span>
+            <span className="text-gray-700">Mini（200GB）</span>
+            <span className="font-semibold text-gray-900">¥150/月</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-gray-700">無料枠</span>
-            <span className="font-semibold text-green-600">100MBまで無料</span>
+            <span className="text-gray-700">Standard（1TB）</span>
+            <span className="font-semibold text-gray-900">¥400/月</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-700">Plus（2TB）</span>
+            <span className="font-semibold text-gray-900">¥700/月</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-700">Max（5TB）</span>
+            <span className="font-semibold text-gray-900">¥1,500/月</span>
+          </div>
+          <div className="pt-2 border-t border-blue-100 flex justify-between items-center">
+            <span className="text-gray-700">データ復元（バルク48h）</span>
+            <span className="font-semibold text-green-600">月間 契約容量の5%まで無料</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-700">無料枠超過の復元（バルク）</span>
+            <span className="font-semibold text-gray-900">¥20/GB</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-700">データ復元（標準12h）</span>
-            <span className="font-semibold text-gray-900">¥5/GB</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-700">データ復元（バルク48h）</span>
-            <span className="font-semibold text-gray-900">¥1/GB</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-700">API呼び出し</span>
-            <span className="font-semibold text-gray-900">¥1/1000リクエスト</span>
+            <span className="font-semibold text-gray-900">¥30/GB</span>
           </div>
         </div>
       </div>

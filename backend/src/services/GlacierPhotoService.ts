@@ -6,6 +6,10 @@ import {
   RestoreObjectCommand,
   DeleteObjectCommand,
   ListObjectsV2Command,
+  CreateMultipartUploadCommand,
+  UploadPartCommand,
+  CompleteMultipartUploadCommand,
+  AbortMultipartUploadCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
@@ -98,6 +102,195 @@ export class GlacierPhotoService {
               [photoId, tag.trim()]
             );
           }
+        }
+      }
+
+      await client.query('COMMIT');
+      return photo;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * プリサインドURL直接アップロードの開始。
+   * 閾値以下は単一PUT、超える場合はS3マルチパートアップロードを初期化し
+   * パートごとのプリサインドURLを返す。
+   */
+  async initDirectUpload(params: {
+    userId: string;
+    s3Key: string;
+    size: number;
+    mimeType: string;
+  }): Promise<
+    | { uploadType: 'single'; key: string; url: string; requiredHeaders: Record<string, string> }
+    | { uploadType: 'multipart'; key: string; uploadId: string; partSize: number; partUrls: { partNumber: number; url: string }[] }
+  > {
+    const SINGLE_PUT_MAX = 64 * 1024 * 1024; // 64MB
+    const PART_SIZE = 64 * 1024 * 1024;
+    const URL_EXPIRES_IN = 6 * 60 * 60; // 6時間（バックグラウンド・低速回線を考慮）
+
+    if (params.size <= SINGLE_PUT_MAX) {
+      const command = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: params.s3Key,
+        ContentType: params.mimeType,
+        StorageClass: 'DEEP_ARCHIVE',
+        ServerSideEncryption: 'AES256',
+      });
+      const url = await getSignedUrl(this.s3Client, command, { expiresIn: URL_EXPIRES_IN });
+      return {
+        uploadType: 'single',
+        key: params.s3Key,
+        url,
+        // 署名対象ヘッダー: クライアントはPUT時にこのヘッダーを付与する必要がある
+        requiredHeaders: {
+          'Content-Type': params.mimeType,
+          'x-amz-storage-class': 'DEEP_ARCHIVE',
+          'x-amz-server-side-encryption': 'AES256',
+        },
+      };
+    }
+
+    const created = await this.s3Client.send(
+      new CreateMultipartUploadCommand({
+        Bucket: this.bucketName,
+        Key: params.s3Key,
+        ContentType: params.mimeType,
+        StorageClass: 'DEEP_ARCHIVE',
+        ServerSideEncryption: 'AES256',
+      })
+    );
+    const uploadId = created.UploadId!;
+    const partCount = Math.ceil(params.size / PART_SIZE);
+    if (partCount > 10000) {
+      throw new Error('File too large: exceeds 10,000 multipart parts');
+    }
+
+    const partUrls = await Promise.all(
+      Array.from({ length: partCount }, async (_, i) => {
+        const partNumber = i + 1;
+        const url = await getSignedUrl(
+          this.s3Client,
+          new UploadPartCommand({
+            Bucket: this.bucketName,
+            Key: params.s3Key,
+            UploadId: uploadId,
+            PartNumber: partNumber,
+          }),
+          { expiresIn: URL_EXPIRES_IN }
+        );
+        return { partNumber, url };
+      })
+    );
+
+    return { uploadType: 'multipart', key: params.s3Key, uploadId, partSize: PART_SIZE, partUrls };
+  }
+
+  /**
+   * マルチパートアップロードの完了
+   */
+  async completeMultipartUpload(
+    s3Key: string,
+    uploadId: string,
+    parts: { partNumber: number; etag: string }[]
+  ): Promise<void> {
+    await this.s3Client.send(
+      new CompleteMultipartUploadCommand({
+        Bucket: this.bucketName,
+        Key: s3Key,
+        UploadId: uploadId,
+        MultipartUpload: {
+          Parts: parts
+            .sort((a, b) => a.partNumber - b.partNumber)
+            .map((p) => ({ PartNumber: p.partNumber, ETag: p.etag })),
+        },
+      })
+    );
+  }
+
+  /**
+   * マルチパートアップロードの中断（パートの掃除）
+   */
+  async abortMultipartUpload(s3Key: string, uploadId: string): Promise<void> {
+    await this.s3Client.send(
+      new AbortMultipartUploadCommand({
+        Bucket: this.bucketName,
+        Key: s3Key,
+        UploadId: uploadId,
+      })
+    );
+  }
+
+  /**
+   * S3上のオブジェクトの存在とサイズを検証する（complete時の整合性チェック）
+   */
+  async verifyObject(s3Key: string): Promise<{ exists: boolean; size: number }> {
+    try {
+      const head = await this.s3Client.send(
+        new HeadObjectCommand({ Bucket: this.bucketName, Key: s3Key })
+      );
+      return { exists: true, size: head.ContentLength ?? 0 };
+    } catch {
+      return { exists: false, size: 0 };
+    }
+  }
+
+  /**
+   * 直接アップロード完了後のメタデータ記録（multer経由ではないアップロード用）
+   */
+  async recordDirectUpload(params: {
+    userId: string;
+    s3Key: string;
+    originalName: string;
+    mimeType: string;
+    size: number;
+    title?: string;
+    description?: string;
+    tags: string[];
+    thumbnail?: string;
+  }): Promise<Photo> {
+    const photoId = uuidv4();
+
+    const photo: Photo = {
+      id: photoId,
+      userId: params.userId,
+      filename: `${photoId}_${params.originalName}`,
+      originalName: params.originalName,
+      mimeType: params.mimeType,
+      size: params.size,
+      title: params.title,
+      description: params.description,
+      tags: params.tags,
+      s3Key: params.s3Key,
+      status: PhotoStatus.ARCHIVED,
+      uploadedAt: Date.now(),
+      thumbnailUrl: params.thumbnail,
+    };
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(`
+        INSERT INTO photos (
+          id, user_id, filename, original_name, mime_type, size,
+          title, description, s3_key, status, uploaded_at, thumbnail_url
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      `, [
+        photo.id, photo.userId, photo.filename, photo.originalName,
+        photo.mimeType, photo.size, photo.title, photo.description,
+        photo.s3Key, photo.status, photo.uploadedAt, photo.thumbnailUrl,
+      ]);
+
+      for (const tag of params.tags) {
+        if (tag && tag.trim()) {
+          await client.query(
+            'INSERT INTO photo_tags (photo_id, tag) VALUES ($1, $2)',
+            [photoId, tag.trim()]
+          );
         }
       }
 
@@ -386,9 +579,9 @@ export class GlacierPhotoService {
       SELECT 
         COUNT(*) as total_photos,
         COALESCE(SUM(size), 0) as total_size,
-        SUM(CASE WHEN status = 'ARCHIVED' THEN 1 ELSE 0 END) as archived,
-        SUM(CASE WHEN status IN ('RESTORING', 'RESTORE_REQUESTED') THEN 1 ELSE 0 END) as restoring,
-        SUM(CASE WHEN status = 'RESTORED' THEN 1 ELSE 0 END) as restored
+        SUM(CASE WHEN status = 'archived' THEN 1 ELSE 0 END) as archived,
+        SUM(CASE WHEN status IN ('restoring', 'restore_requested') THEN 1 ELSE 0 END) as restoring,
+        SUM(CASE WHEN status = 'restored' THEN 1 ELSE 0 END) as restored
       FROM photos
       WHERE user_id = $1
     `, [userId]);

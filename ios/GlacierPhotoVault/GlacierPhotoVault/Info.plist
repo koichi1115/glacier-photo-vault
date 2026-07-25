@@ -48,10 +48,16 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-	</dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.glacierphotovault.auth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>glaciervault</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

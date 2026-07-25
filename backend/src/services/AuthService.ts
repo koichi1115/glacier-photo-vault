@@ -26,7 +26,10 @@ export class AuthService {
         this.secret = fs.readFileSync(path.join(process.cwd(), 'keys', 'private.key'), 'utf8');
         console.log('✅ JWT secret loaded from file');
       } catch (error) {
-        console.warn('⚠️  JWT_SECRET not set and keys not found - using fallback secret');
+        if (process.env.NODE_ENV === 'production') {
+          throw new Error('JWT_SECRET must be set in production (no keys/private.key found)');
+        }
+        console.warn('⚠️  JWT_SECRET not set and keys not found - using fallback secret (development only)');
         this.secret = 'dev-secret-key-change-in-production';
       }
     }

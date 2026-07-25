@@ -41,10 +41,27 @@ services:
       - key: PORT
         value: 3000
 
+      # 認証・課金（Render Dashboard → Environment で設定）
+      - key: JWT_SECRET
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      # Sign in with Apple（iOSアプリのバンドルID）
+      - key: APPLE_BUNDLE_ID
+        sync: false
+
       # 以下はデプロイ後に手動設定
       # GOOGLE_CALLBACK_URL: https://YOUR_APP.onrender.com/api/auth/google/callback
       # LINE_CALLBACK_URL: https://YOUR_APP.onrender.com/api/auth/line/callback
       # FRONTEND_URL: https://YOUR_FRONTEND.vercel.app
+      # STRIPE_PRICE_MINI / STRIPE_PRICE_STANDARD / STRIPE_PRICE_PLUS / STRIPE_PRICE_MAX
+      #   （任意: 未設定時はティア価格でPriceを自動作成）
 
 # フロントエンド（Vercelを使う場合は不要）
 # - type: web

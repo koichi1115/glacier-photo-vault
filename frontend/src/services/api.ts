@@ -129,6 +129,22 @@ class ApiService {
     return false;
   }
 
+  /**
+   * OAuth認可コードをトークンに交換する（コールバックURLにトークンを載せない方式）
+   */
+  async exchangeCode(code: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/api/auth/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to exchange authorization code');
+    }
+    const data = await response.json();
+    this.setTokens(data.accessToken, data.refreshToken);
+  }
+
   // API Methods
   async getMe(): Promise<User> {
     const response = await this.fetch('/api/auth/me');
@@ -169,6 +185,99 @@ class ApiService {
       // Content-Type is set automatically for FormData
     });
     return response.json();
+  }
+
+  /**
+   * プリサインドURLによるS3直接アップロード（100MB超・大容量ファイル対応）
+   * init → S3へ直接PUT（マルチパート対応） → complete の3段階。
+   */
+  async uploadFileDirect(
+    file: File,
+    meta: {
+      relativePath?: string;
+      title?: string;
+      description?: string;
+      tags?: string[];
+      thumbnail?: string;
+    }
+  ): Promise<any> {
+    const mimeType = file.type || 'application/octet-stream';
+
+    const initRes = await this.fetch('/api/uploads/init', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fileName: file.name,
+        relativePath: meta.relativePath,
+        size: file.size,
+        mimeType,
+      }),
+    });
+    if (!initRes.ok) {
+      const err = await initRes.json().catch(() => ({}));
+      throw new Error(err.message || 'アップロードの初期化に失敗しました');
+    }
+    const init = await initRes.json();
+
+    let parts: Array<{ partNumber: number; etag: string }> | undefined;
+
+    if (init.uploadType === 'single') {
+      const putRes = await fetch(init.url, {
+        method: 'PUT',
+        headers: init.requiredHeaders,
+        body: file,
+      });
+      if (!putRes.ok) {
+        throw new Error(`ストレージへのアップロードに失敗しました (${putRes.status})`);
+      }
+    } else {
+      parts = [];
+      try {
+        for (const { partNumber, url } of init.partUrls) {
+          const start = (partNumber - 1) * init.partSize;
+          const chunk = file.slice(start, Math.min(start + init.partSize, file.size));
+          const putRes = await fetch(url, { method: 'PUT', body: chunk });
+          if (!putRes.ok) {
+            throw new Error(`パート${partNumber}のアップロードに失敗しました (${putRes.status})`);
+          }
+          // 注意: ETagの取得にはS3バケットのCORS設定で ExposeHeaders: ETag が必要
+          const etag = putRes.headers.get('ETag');
+          if (!etag) {
+            throw new Error('ETagを取得できません（S3バケットのCORS設定を確認してください）');
+          }
+          parts.push({ partNumber, etag: etag.replace(/"/g, '') });
+        }
+      } catch (e) {
+        // 失敗時は未完了パートを掃除する
+        await this.fetch('/api/uploads/abort', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: init.key, uploadId: init.uploadId }),
+        }).catch(() => undefined);
+        throw e;
+      }
+    }
+
+    const completeRes = await this.fetch('/api/uploads/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        key: init.key,
+        uploadId: init.uploadType === 'multipart' ? init.uploadId : undefined,
+        parts,
+        fileName: file.name,
+        mimeType,
+        title: meta.title,
+        description: meta.description,
+        tags: meta.tags,
+        thumbnail: meta.thumbnail,
+      }),
+    });
+    if (!completeRes.ok) {
+      const err = await completeRes.json().catch(() => ({}));
+      throw new Error(err.message || 'アップロードの完了処理に失敗しました');
+    }
+    return completeRes.json();
   }
 
   async requestRestore(photoId: string, tier: 'Standard' | 'Bulk'): Promise<any> {
@@ -216,17 +325,33 @@ class ApiService {
     return response.json();
   }
 
-  async confirmCard(paymentMethodId: string, couponCode?: string): Promise<{
+  async getTiers(): Promise<{
+    success: boolean;
+    tiers: Array<{
+      id: string;
+      name: string;
+      priceJpy: number;
+      storageLimitBytes: number;
+    }>;
+  }> {
+    // 認証不要の公開エンドポイント
+    const response = await fetch(`${API_BASE_URL}/api/billing/tiers`);
+    return response.json();
+  }
+
+  async confirmCard(paymentMethodId: string, couponCode?: string, tier?: string): Promise<{
     success: boolean;
     subscription: {
       status: string;
+      tier: string | null;
+      storageLimitBytes: number | null;
       trialEnd: number;
     };
   }> {
     const response = await this.fetch('/api/billing/confirm-card', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paymentMethodId, couponCode }),
+      body: JSON.stringify({ paymentMethodId, couponCode, tier }),
     });
     return response.json();
   }

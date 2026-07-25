@@ -85,6 +85,61 @@ export const initDb = async () => {
       )
     `);
 
+    // ティア制課金用カラム（platform: 'stripe' | 'apple'）
+    await client.query(`
+      ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS platform TEXT DEFAULT 'stripe'
+    `);
+    await client.query(`
+      ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS tier TEXT
+    `);
+    await client.query(`
+      ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS storage_limit_bytes BIGINT
+    `);
+    await client.query(`
+      ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS apple_original_transaction_id TEXT
+    `);
+
+    // プッシュ通知用デバイストークン
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS device_tokens (
+        token TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        platform TEXT DEFAULT 'ios',
+        created_at BIGINT NOT NULL
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_device_tokens_user ON device_tokens (user_id)
+    `);
+
+    // 復元リクエストのログ（月間無料枠の消費計算と超過課金の記録）
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS restore_logs (
+        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+        user_id TEXT NOT NULL,
+        photo_id TEXT NOT NULL,
+        bytes BIGINT NOT NULL,
+        tier TEXT NOT NULL,
+        charged_jpy INTEGER DEFAULT 0,
+        created_at BIGINT NOT NULL
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_restore_logs_user_created
+      ON restore_logs (user_id, created_at)
+    `);
+
+    // OAuth認可コード（一時・PKCE対応）: トークンをURLで受け渡さないための交換用コード
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS auth_codes (
+        code TEXT PRIMARY KEY,
+        payload JSONB NOT NULL,
+        code_challenge TEXT,
+        expires_at BIGINT NOT NULL,
+        used BOOLEAN DEFAULT false
+      )
+    `);
+
     // Coupons table
     await client.query(`
       CREATE TABLE IF NOT EXISTS coupons (

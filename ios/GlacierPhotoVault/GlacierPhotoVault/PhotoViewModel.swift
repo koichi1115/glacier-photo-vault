@@ -2,8 +2,6 @@
 //  PhotoViewModel.swift
 //  GlacierPhotoVault
 //
-//  Created by Claude
-//
 
 import Foundation
 import SwiftUI
@@ -15,15 +13,24 @@ class PhotoViewModel: ObservableObject {
     @Published var stats: PhotoStats?
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var uploadProgress: Double?
 
-    private let userId: String
     private let apiClient = APIClient.shared
 
-    init(userId: String = "demo-user") {
-        self.userId = userId
+    private var userId: String? {
+        AuthManager.shared.currentUser?.userId
+    }
+
+    /// ログイン直後などにユーザー情報を確定させてから読み込む
+    func ensureUserLoaded() async {
+        if AuthManager.shared.currentUser == nil, AuthManager.shared.isAuthenticated {
+            AuthManager.shared.currentUser = try? await apiClient.getMe()
+        }
     }
 
     func loadPhotos() async {
+        await ensureUserLoaded()
+        guard let userId else { return }
         isLoading = true
         errorMessage = nil
 
@@ -37,6 +44,7 @@ class PhotoViewModel: ObservableObject {
     }
 
     func loadStats() async {
+        guard let userId else { return }
         do {
             stats = try await apiClient.getUserStats(userId: userId)
         } catch {
@@ -44,17 +52,30 @@ class PhotoViewModel: ObservableObject {
         }
     }
 
-    func uploadPhoto(image: UIImage, title: String?, description: String?, tags: [String]) async {
+    /// プリサインドURL経由の直接アップロード
+    func uploadFile(
+        data: Data,
+        fileName: String,
+        mimeType: String,
+        title: String?,
+        description: String?,
+        tags: [String]
+    ) async {
         isLoading = true
         errorMessage = nil
+        uploadProgress = 0
 
         do {
-            let photo = try await apiClient.uploadPhoto(
-                userId: userId,
-                image: image,
+            let photo = try await apiClient.uploadFile(
+                data: data,
+                fileName: fileName,
+                mimeType: mimeType,
                 title: title,
                 description: description,
-                tags: tags
+                tags: tags,
+                progress: { [weak self] p in
+                    Task { @MainActor in self?.uploadProgress = p }
+                }
             )
             photos.insert(photo, at: 0)
             await loadStats()
@@ -63,6 +84,7 @@ class PhotoViewModel: ObservableObject {
         }
 
         isLoading = false
+        uploadProgress = nil
     }
 
     func requestRestore(photoId: String, tier: String) async {
@@ -71,7 +93,9 @@ class PhotoViewModel: ObservableObject {
         do {
             let response = try await apiClient.requestRestore(photoId: photoId, tier: tier)
             await loadPhotos()
-            errorMessage = response.message
+            if let hours = response.estimatedHours {
+                errorMessage = "復元をリクエストしました（約\(hours)時間）"
+            }
         } catch {
             errorMessage = "復元リクエストに失敗しました: \(error.localizedDescription)"
         }
@@ -79,12 +103,7 @@ class PhotoViewModel: ObservableObject {
 
     func checkRestoreStatus(photoId: String) async {
         do {
-            let status = try await apiClient.checkRestoreStatus(photoId: photoId)
-            if let index = photos.firstIndex(where: { $0.id == photoId }) {
-                var updatedPhoto = photos[index]
-                // Note: This is a simplified update, in a real app you'd fetch the full photo object
-                photos[index] = updatedPhoto
-            }
+            _ = try await apiClient.checkRestoreStatus(photoId: photoId)
             await loadPhotos()
         } catch {
             errorMessage = "状態確認に失敗しました: \(error.localizedDescription)"

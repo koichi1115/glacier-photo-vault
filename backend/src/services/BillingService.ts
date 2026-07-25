@@ -1,6 +1,14 @@
 import pool from '../db';
 import { stripeService, Subscription, Coupon } from './StripeService';
 import { GlacierPhotoService } from './GlacierPhotoService';
+import {
+  getTier,
+  TIERS,
+  StorageTier,
+  TRIAL_LIMIT_BYTES,
+  RESTORE_FREE_QUOTA_RATIO,
+  RESTORE_PRICE_JPY_PER_GB,
+} from '../config/tiers';
 
 const TRIAL_DAYS = 30;
 const DELETION_DELAY_DAYS = 60; // 2 months
@@ -19,7 +27,8 @@ export class BillingService {
     const result = await pool.query(`
       SELECT
         id, user_id, stripe_customer_id, stripe_subscription_id,
-        status, trial_start, trial_end,
+        status, platform, tier, storage_limit_bytes,
+        trial_start, trial_end,
         current_period_start, current_period_end,
         canceled_at, created_at, updated_at
       FROM subscriptions
@@ -37,6 +46,9 @@ export class BillingService {
       stripeCustomerId: row.stripe_customer_id,
       stripeSubscriptionId: row.stripe_subscription_id,
       status: row.status,
+      platform: row.platform || 'stripe',
+      tier: row.tier,
+      storageLimitBytes: row.storage_limit_bytes ? Number(row.storage_limit_bytes) : null,
       trialStart: row.trial_start,
       trialEnd: row.trial_end,
       currentPeriodStart: row.current_period_start,
@@ -116,12 +128,15 @@ export class BillingService {
   async confirmCardAndStartTrial(
     userId: string,
     paymentMethodId: string,
-    couponCode?: string
+    couponCode?: string,
+    tierId?: string
   ): Promise<Subscription> {
     const subscription = await this.getSubscription(userId);
     if (!subscription || !subscription.stripeCustomerId) {
       throw new Error('Subscription not initialized');
     }
+
+    const tier: StorageTier = getTier(tierId) ?? TIERS.mini;
 
     // Attach payment method
     await stripeService.attachPaymentMethod(
@@ -142,6 +157,7 @@ export class BillingService {
     // Create Stripe subscription with trial
     const stripeSub = await stripeService.createSubscription(
       subscription.stripeCustomerId,
+      tier,
       TRIAL_DAYS,
       stripeCouponId
     );
@@ -155,13 +171,16 @@ export class BillingService {
       SET
         stripe_subscription_id = $1,
         status = 'trialing',
-        trial_start = $2,
-        trial_end = $3,
-        current_period_start = $2,
-        current_period_end = $3,
-        updated_at = $2
-      WHERE user_id = $4
-    `, [stripeSub.id, now, trialEnd, userId]);
+        platform = 'stripe',
+        tier = $2,
+        storage_limit_bytes = $3,
+        trial_start = $4,
+        trial_end = $5,
+        current_period_start = $4,
+        current_period_end = $5,
+        updated_at = $4
+      WHERE user_id = $6
+    `, [stripeSub.id, tier.id, tier.storageLimitBytes, now, trialEnd, userId]);
 
     return (await this.getSubscription(userId))!;
   }
@@ -295,27 +314,88 @@ export class BillingService {
   }
 
   /**
-   * Calculate and add monthly usage charges
+   * 復元リクエストの認可と課金額計算。
+   * - Bulk: 月間 契約容量×5% まで無料。超過分は¥20/GB。
+   * - Standard: 常に有料（¥30/GB）。
+   * 超過課金はStripeの次回請求書に載せる。Apple課金ユーザーは超過復元不可
+   * （iOS側の消耗型IAP「復元パック」実装までの暫定仕様）。
    */
-  async processMonthlyBilling(userId: string): Promise<number> {
+  async authorizeRestore(
+    userId: string,
+    photoSizeBytes: number,
+    tier: 'Standard' | 'Bulk'
+  ): Promise<{ allowed: boolean; chargeJpy: number; reason?: string }> {
     const subscription = await this.getSubscription(userId);
-    if (!subscription || !subscription.stripeCustomerId) {
-      throw new Error('No subscription found');
-    }
+    const limitBytes =
+      subscription?.storageLimitBytes ??
+      getTier(subscription?.tier)?.storageLimitBytes ??
+      TRIAL_LIMIT_BYTES;
 
-    const stats = await this.glacierService.getUserStats(userId);
-    const storageGB = stats.totalSize / (1024 * 1024 * 1024);
-    const cost = Math.ceil(storageGB * 10); // ¥10/GB
+    const gb = photoSizeBytes / (1024 * 1024 * 1024);
+    let chargeJpy = 0;
 
-    if (cost > 0) {
-      await stripeService.addUsageCharge(
-        subscription.stripeCustomerId,
-        storageGB,
-        10
+    if (tier === 'Standard') {
+      chargeJpy = Math.ceil(gb * RESTORE_PRICE_JPY_PER_GB.Standard);
+    } else {
+      // 当月のBulk復元済みバイト数を集計して無料枠を判定
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+
+      const res = await pool.query(
+        `SELECT COALESCE(SUM(bytes), 0) AS used FROM restore_logs
+         WHERE user_id = $1 AND tier = 'Bulk' AND created_at >= $2`,
+        [userId, monthStart.getTime()]
       );
+      const usedBytes = Number(res.rows[0].used);
+      const freeQuotaBytes = Math.floor(limitBytes * RESTORE_FREE_QUOTA_RATIO);
+
+      const overageBytes = Math.max(0, usedBytes + photoSizeBytes - freeQuotaBytes);
+      if (overageBytes > 0) {
+        chargeJpy = Math.ceil((overageBytes / (1024 * 1024 * 1024)) * RESTORE_PRICE_JPY_PER_GB.Bulk);
+      }
     }
 
-    return cost;
+    if (chargeJpy > 0) {
+      if (!subscription || subscription.platform !== 'stripe' || !subscription.stripeCustomerId) {
+        return {
+          allowed: false,
+          chargeJpy,
+          reason: 'RESTORE_PAYMENT_REQUIRED',
+        };
+      }
+    }
+
+    return { allowed: true, chargeJpy };
+  }
+
+  /**
+   * 復元をログに記録し、有料分はStripeの次回請求書に計上する
+   */
+  async recordRestore(
+    userId: string,
+    photoId: string,
+    photoSizeBytes: number,
+    tier: 'Standard' | 'Bulk',
+    chargeJpy: number
+  ): Promise<void> {
+    if (chargeJpy > 0) {
+      const subscription = await this.getSubscription(userId);
+      if (subscription?.stripeCustomerId) {
+        const gb = photoSizeBytes / (1024 * 1024 * 1024);
+        await stripeService.addRestoreCharge(
+          subscription.stripeCustomerId,
+          chargeJpy,
+          `データ復元（${tier}）${gb.toFixed(2)}GB`
+        );
+      }
+    }
+
+    await pool.query(
+      `INSERT INTO restore_logs (user_id, photo_id, bytes, tier, charged_jpy, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [userId, photoId, photoSizeBytes, tier, chargeJpy, Date.now()]
+    );
   }
 
   /**

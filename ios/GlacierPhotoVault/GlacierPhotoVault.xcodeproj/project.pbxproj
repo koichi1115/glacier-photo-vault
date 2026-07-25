@@ -14,6 +14,13 @@
 		MAIN000009 /* PhotoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = MAIN000010 /* PhotoViewModel.swift */; };
 		MAIN000011 /* PhotoCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MAIN000012 /* PhotoCardView.swift */; };
 		MAIN000013 /* UploadPhotoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MAIN000014 /* UploadPhotoView.swift */; };
+		BKUP000001 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKUP000002 /* DesignSystem.swift */; };
+		BKUP000003 /* BackupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKUP000004 /* BackupManager.swift */; };
+		BKUP000005 /* BackupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKUP000006 /* BackupView.swift */; };
+		BKUP000007 /* FilesBackupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKUP000008 /* FilesBackupManager.swift */; };
+		BKUP000009 /* FilesBackupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKUP000010 /* FilesBackupView.swift */; };
+		BKUP000011 /* StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKUP000012 /* StoreKitManager.swift */; };
+		BKUP000013 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKUP000014 /* PaywallView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +33,13 @@
 		MAIN000012 /* PhotoCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCardView.swift; sourceTree = "<group>"; };
 		MAIN000014 /* UploadPhotoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadPhotoView.swift; sourceTree = "<group>"; };
 		MAIN000016 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BKUP000002 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		BKUP000004 /* BackupManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManager.swift; sourceTree = "<group>"; };
+		BKUP000006 /* BackupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupView.swift; sourceTree = "<group>"; };
+		BKUP000008 /* FilesBackupManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesBackupManager.swift; sourceTree = "<group>"; };
+		BKUP000010 /* FilesBackupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesBackupView.swift; sourceTree = "<group>"; };
+		BKUP000012 /* StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitManager.swift; sourceTree = "<group>"; };
+		BKUP000014 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +71,13 @@
 				MAIN000010 /* PhotoViewModel.swift */,
 				MAIN000012 /* PhotoCardView.swift */,
 				MAIN000014 /* UploadPhotoView.swift */,
+				BKUP000002 /* DesignSystem.swift */,
+				BKUP000004 /* BackupManager.swift */,
+				BKUP000006 /* BackupView.swift */,
+				BKUP000008 /* FilesBackupManager.swift */,
+				BKUP000010 /* FilesBackupView.swift */,
+				BKUP000012 /* StoreKitManager.swift */,
+				BKUP000014 /* PaywallView.swift */,
 				MAIN000016 /* Info.plist */,
 			);
 			path = GlacierPhotoVault;
@@ -140,6 +161,13 @@
 				MAIN000009 /* PhotoViewModel.swift in Sources */,
 				MAIN000011 /* PhotoCardView.swift in Sources */,
 				MAIN000013 /* UploadPhotoView.swift in Sources */,
+				BKUP000001 /* DesignSystem.swift in Sources */,
+				BKUP000003 /* BackupManager.swift in Sources */,
+				BKUP000005 /* BackupView.swift in Sources */,
+				BKUP000007 /* FilesBackupManager.swift in Sources */,
+				BKUP000009 /* FilesBackupView.swift in Sources */,
+				BKUP000011 /* StoreKitManager.swift in Sources */,
+				BKUP000013 /* PaywallView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

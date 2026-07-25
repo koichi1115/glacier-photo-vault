@@ -7,13 +7,13 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/backend/src/index.js",
-    "batch:daily": "tsx src/scripts/dailyUsageBatch.ts",
-    "batch:monthly": "tsx src/scripts/monthlyBillingBatch.ts"
+    "migrate:tiers": "tsx src/scripts/migrateSubscriptionsToTiers.ts",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.30.0",
     "stripe": "^14.0.0",
     "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/client-sts": "^3.600.0",
     "@aws-sdk/s3-request-presigner": "^3.600.0",
     "@glacier-photo-vault/shared": "*",
     "@types/cors": "^2.8.17",
@@ -45,12 +45,12 @@
     "passport-line-auth": "^0.2.9",
     "pg": "^8.11.3",
     "sanitize-html": "^2.17.0",
-    "socket.io": "^4.7.2",
     "typescript": "^5.3.3",
     "uuid": "^9.0.1",
     "winston": "^3.19.0"
   },
   "devDependencies": {
-    "tsx": "^4.7.0"
+    "tsx": "^4.7.0",
+    "vitest": "^2.1.9"
   }
 }
