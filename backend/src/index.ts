@@ -139,6 +139,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });
 });
 
+// Google Search Console サイト所有権確認ファイル（セーフブラウジング誤検知の解除申請用）
+app.get('/googleadd9b6ad865a306e.html', (_req, res) => {
+  res.type('text/html').send('google-site-verification: googleadd9b6ad865a306e.html');
+});
+
 // 認証ルート（認証専用レート制限）
 app.use('/api/auth', authLimiter, authRoutes);
 
