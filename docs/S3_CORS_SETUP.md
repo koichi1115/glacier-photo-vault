@@ -3,6 +3,10 @@
 `/api/uploads/*` によるブラウザ/iOSからのS3直接PUTには、バケットにCORS設定が必要です。
 特に `ETag` の公開（ExposeHeaders）がないとマルチパートアップロードが完了できません。
 
+> **本番バケットは `glacier-photo-vault-ko1115`（ap-northeast-1）**（RenderのS3_BUCKET_NAME参照）。
+> 同アカウントの `glacier-photo-vault`（us-east-1）は旧バケットで本番未使用。
+> 2026-07-28 適用済み: オリジン = glacier-photo-vault-frontend.vercel.app / localhost:5173
+
 ## 設定コマンド
 
 ```powershell
