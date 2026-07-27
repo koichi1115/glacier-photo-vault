@@ -10,6 +10,7 @@ import {
   UploadPartCommand,
   CompleteMultipartUploadCommand,
   AbortMultipartUploadCommand,
+  GetBucketLocationCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
@@ -26,18 +27,60 @@ interface PhotoMetadata {
 }
 
 export class GlacierPhotoService {
-  private s3Client: S3Client;
+  private bootstrapClient: S3Client;
+  private clientPromise: Promise<S3Client> | null = null;
   private bucketName: string;
 
   constructor() {
-    this.s3Client = new S3Client({
-      region: process.env.AWS_REGION || 'us-east-1',
+    this.bootstrapClient = GlacierPhotoService.buildClient(
+      process.env.AWS_REGION || 'us-east-1'
+    );
+    this.bucketName = process.env.S3_BUCKET_NAME || 'glacier-photo-vault';
+  }
+
+  private static buildClient(region: string): S3Client {
+    return new S3Client({
+      region,
       credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
       },
+      // プリサインドURLにチェックサム(x-amz-checksum-crc32)が署名されると
+      // ブラウザ/iOSからの直接PUTが署名不整合で失敗するため無効化する
+      // (AWS SDK v3.729以降のデフォルト変更への対処)
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+      responseChecksumValidation: 'WHEN_REQUIRED',
     });
-    this.bucketName = process.env.S3_BUCKET_NAME || 'glacier-photo-vault';
+  }
+
+  /**
+   * バケットの実リージョンを自動解決したクライアントを返す。
+   * 環境変数のリージョンとバケットの所在が食い違っていても
+   * プリサインドURLが正しいエンドポイントで署名されるようにする。
+   */
+  private getClient(): Promise<S3Client> {
+    if (!this.clientPromise) {
+      this.clientPromise = (async () => {
+        try {
+          const loc = await this.bootstrapClient.send(
+            new GetBucketLocationCommand({ Bucket: this.bucketName })
+          );
+          const bucketRegion = loc.LocationConstraint || 'us-east-1';
+          const envRegion = process.env.AWS_REGION || 'us-east-1';
+          if (bucketRegion === envRegion) {
+            return this.bootstrapClient;
+          }
+          console.log(
+            `📍 S3 bucket '${this.bucketName}' is in ${bucketRegion} (AWS_REGION=${envRegion}) — using bucket region`
+          );
+          return GlacierPhotoService.buildClient(bucketRegion);
+        } catch (error) {
+          console.warn('Failed to resolve bucket region; falling back to AWS_REGION:', error);
+          return this.bootstrapClient;
+        }
+      })();
+    }
+    return this.clientPromise;
   }
 
   /**
@@ -134,28 +177,29 @@ export class GlacierPhotoService {
     const URL_EXPIRES_IN = 6 * 60 * 60; // 6時間（バックグラウンド・低速回線を考慮）
 
     if (params.size <= SINGLE_PUT_MAX) {
+      // ServerSideEncryption を明示するとプリサインドURLの「署名済みヘッダー」となり、
+      // ブラウザ/iOSからのPUTで不整合が起きるため指定しない
+      // （S3はバケットデフォルトで全オブジェクトをSSE-S3(AES256)暗号化する）。
+      // StorageClass はURLクエリに巻き上げられるためヘッダー送信不要。
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
         Key: params.s3Key,
         ContentType: params.mimeType,
         StorageClass: 'DEEP_ARCHIVE',
-        ServerSideEncryption: 'AES256',
       });
-      const url = await getSignedUrl(this.s3Client, command, { expiresIn: URL_EXPIRES_IN });
+      const url = await getSignedUrl(await this.getClient(), command, { expiresIn: URL_EXPIRES_IN });
       return {
         uploadType: 'single',
         key: params.s3Key,
         url,
-        // 署名対象ヘッダー: クライアントはPUT時にこのヘッダーを付与する必要がある
+        // Content-Typeは署名対象外だが、正しいメタデータ保存のため送信を推奨
         requiredHeaders: {
           'Content-Type': params.mimeType,
-          'x-amz-storage-class': 'DEEP_ARCHIVE',
-          'x-amz-server-side-encryption': 'AES256',
         },
       };
     }
 
-    const created = await this.s3Client.send(
+    const created = await (await this.getClient()).send(
       new CreateMultipartUploadCommand({
         Bucket: this.bucketName,
         Key: params.s3Key,
@@ -170,11 +214,12 @@ export class GlacierPhotoService {
       throw new Error('File too large: exceeds 10,000 multipart parts');
     }
 
+    const s3 = await this.getClient();
     const partUrls = await Promise.all(
       Array.from({ length: partCount }, async (_, i) => {
         const partNumber = i + 1;
         const url = await getSignedUrl(
-          this.s3Client,
+          s3,
           new UploadPartCommand({
             Bucket: this.bucketName,
             Key: params.s3Key,
@@ -198,7 +243,7 @@ export class GlacierPhotoService {
     uploadId: string,
     parts: { partNumber: number; etag: string }[]
   ): Promise<void> {
-    await this.s3Client.send(
+    await (await this.getClient()).send(
       new CompleteMultipartUploadCommand({
         Bucket: this.bucketName,
         Key: s3Key,
@@ -216,7 +261,7 @@ export class GlacierPhotoService {
    * マルチパートアップロードの中断（パートの掃除）
    */
   async abortMultipartUpload(s3Key: string, uploadId: string): Promise<void> {
-    await this.s3Client.send(
+    await (await this.getClient()).send(
       new AbortMultipartUploadCommand({
         Bucket: this.bucketName,
         Key: s3Key,
@@ -230,7 +275,7 @@ export class GlacierPhotoService {
    */
   async verifyObject(s3Key: string): Promise<{ exists: boolean; size: number }> {
     try {
-      const head = await this.s3Client.send(
+      const head = await (await this.getClient()).send(
         new HeadObjectCommand({ Bucket: this.bucketName, Key: s3Key })
       );
       return { exists: true, size: head.ContentLength ?? 0 };
@@ -394,7 +439,7 @@ export class GlacierPhotoService {
         },
       });
 
-      await this.s3Client.send(restoreCommand);
+      await (await this.getClient()).send(restoreCommand);
 
       // Update status in DB
       await pool.query(
@@ -429,7 +474,7 @@ export class GlacierPhotoService {
         Key: photo.s3Key,
       });
 
-      const response = await this.s3Client.send(headCommand);
+      const response = await (await this.getClient()).send(headCommand);
       let newStatus = photo.status;
       let restoredUntil: number | undefined = undefined;
 
@@ -486,7 +531,7 @@ export class GlacierPhotoService {
         Key: photo.s3Key,
       });
 
-      const signedUrl = await getSignedUrl(this.s3Client, getCommand, {
+      const signedUrl = await getSignedUrl(await this.getClient(), getCommand, {
         expiresIn,
       });
 
@@ -512,7 +557,7 @@ export class GlacierPhotoService {
         Key: photo.s3Key,
       });
 
-      await this.s3Client.send(deleteCommand);
+      await (await this.getClient()).send(deleteCommand);
 
       await pool.query('DELETE FROM photos WHERE id = $1', [photoId]);
     } catch (error) {
@@ -704,7 +749,7 @@ export class GlacierPhotoService {
           ContinuationToken: continuationToken,
         });
 
-        const listResponse = await this.s3Client.send(listCommand);
+        const listResponse = await (await this.getClient()).send(listCommand);
 
         if (listResponse.Contents && listResponse.Contents.length > 0) {
           // Delete each object
@@ -714,7 +759,7 @@ export class GlacierPhotoService {
                 Bucket: this.bucketName,
                 Key: object.Key,
               });
-              await this.s3Client.send(deleteCommand);
+              await (await this.getClient()).send(deleteCommand);
             }
           }
         }

@@ -11,13 +11,16 @@ import { requireSubscription } from '../middleware/requireSubscription';
 const router = express.Router();
 const glacierService = new GlacierPhotoService();
 
-// S3 Client for multer-s3
+// S3 Client for multer-s3（レガシーのプロキシアップロード経路用）
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || 'us-east-1',
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
   },
+  followRegionRedirects: true,
+  requestChecksumCalculation: 'WHEN_REQUIRED',
+  responseChecksumValidation: 'WHEN_REQUIRED',
 });
 
 const bucketName = process.env.S3_BUCKET_NAME || 'glacier-photo-vault';
