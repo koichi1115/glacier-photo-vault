@@ -5,6 +5,7 @@ import { Login } from './components/Login';
 import { AuthCallback } from './components/AuthCallback';
 import { SubscriptionPage } from './components/SubscriptionPage';
 import { TrialBanner } from './components/TrialBanner';
+import { MathPractice } from './features/math/MathPractice';
 import { api, User } from './services/api';
 import './App.css';
 
@@ -52,6 +53,12 @@ function App() {
         return;
       }
 
+      // 計算れんしゅうページはログイン不要なので認証チェックをスキップ
+      if (window.location.pathname.startsWith('/math')) {
+        setLoading(false);
+        return;
+      }
+
       // Check for existing session
       if (api.isAuthenticated()) {
         try {
@@ -89,6 +96,11 @@ function App() {
   // Route: Callback
   if (path === '/auth/callback') {
     return <AuthCallback />;
+  }
+
+  // Route: 計算れんしゅう（ログイン不要）
+  if (path.startsWith('/math')) {
+    return <MathPractice />;
   }
 
   // Route: Login (if not authenticated)
