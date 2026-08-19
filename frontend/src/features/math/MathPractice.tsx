@@ -276,6 +276,12 @@ export const MathPractice = () => {
             onChange={(value) => updateSettings({ voiceEnabled: value })}
           />
           <ToggleRow
+            label="スピードモード"
+            description="まちじかんを みじかく。テンキーは けたが そろうと じどうで はんてい"
+            checked={settings.speedMode}
+            onChange={(value) => updateSettings({ speedMode: value })}
+          />
+          <ToggleRow
             label="おとを だす"
             description="せいかい・まちがいの こうかおん"
             checked={settings.soundEnabled}

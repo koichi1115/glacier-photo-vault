@@ -49,6 +49,8 @@ export interface QuizSettings {
   voiceEnabled: boolean;
   soundEnabled: boolean;
   readAloud: boolean;
+  /** テンポ重視: まちの短縮 + テンキーは けたが そろったら自動判定 */
+  speedMode: boolean;
 }
 
 export const DEFAULT_SETTINGS: QuizSettings = {
@@ -58,6 +60,7 @@ export const DEFAULT_SETTINGS: QuizSettings = {
   voiceEnabled: true,
   soundEnabled: true,
   readAloud: false,
+  speedMode: true,
 };
 
 const safeParse = <T,>(raw: string | null): T | null => {

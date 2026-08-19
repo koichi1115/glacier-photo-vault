@@ -37,10 +37,15 @@ interface LastResult {
   answer: number;
 }
 
-const CORRECT_FEEDBACK_MS = 900;
-const WRONG_FEEDBACK_MS = 2200;
+/**
+ * スピードモードは「まち」を最短にする。
+ * まちがい表示だけは、こたえを見て覚える時間として長めに残す。
+ */
+const CORRECT_FEEDBACK_MS = { normal: 900, speed: 450 };
+const WRONG_FEEDBACK_MS = { normal: 2200, speed: 1600 };
 /** 途中経過の認識結果を「言い終わった」とみなすまでの時間 */
-const INTERIM_COMMIT_MS = 1100;
+const INTERIM_COMMIT_MS = { normal: 1100, speed: 700 };
+const COUNTDOWN_TICK_MS = { normal: 700, speed: 500 };
 
 const keypadKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 
@@ -67,6 +72,7 @@ export const MathQuiz = ({ settings, onFinish, onQuit }: Props) => {
 
   const problem = problems[index];
   const total = settings.questionCount;
+  const pace = settings.speedMode ? 'speed' : 'normal';
   const answeredCount = answersRef.current.length;
 
   useEffect(() => {
@@ -169,10 +175,10 @@ export const MathQuiz = ({ settings, onFinish, onQuit }: Props) => {
       setPhase('feedback');
       advanceTimerRef.current = window.setTimeout(
         goNext,
-        correct ? CORRECT_FEEDBACK_MS : WRONG_FEEDBACK_MS
+        correct ? CORRECT_FEEDBACK_MS[pace] : WRONG_FEEDBACK_MS[pace]
       );
     },
-    [goNext, problem, settings.soundEnabled]
+    [goNext, pace, problem, settings.soundEnabled]
   );
 
   /** ききまちがいだったとき、いまの1問をやり直す */
@@ -201,9 +207,32 @@ export const MathQuiz = ({ settings, onFinish, onQuit }: Props) => {
         if (phaseRef.current === 'playing' && !answeredRef.current) {
           submitAnswer(value, 'voice');
         }
-      }, INTERIM_COMMIT_MS);
+      }, INTERIM_COMMIT_MS[pace]);
     },
-    [submitAnswer]
+    [pace, submitAnswer]
+  );
+
+  const inputRef = useRef('');
+  useEffect(() => {
+    inputRef.current = input;
+  }, [input]);
+
+  const appendDigit = useCallback(
+    (digit: string) => {
+      if (phaseRef.current !== 'playing' || answeredRef.current) return;
+      if (inputRef.current.length >= 3) return;
+      const next = inputRef.current + digit;
+      inputRef.current = next;
+      setInput(next);
+      if (
+        settings.speedMode &&
+        problem &&
+        next.length === String(problem.answer).length
+      ) {
+        submitAnswer(Number.parseInt(next, 10), 'tap');
+      }
+    },
+    [problem, settings.speedMode, submitAnswer]
   );
 
   const speech = useSpeechRecognition({ onResult: handleSpeechResult });
@@ -228,9 +257,12 @@ export const MathQuiz = ({ settings, onFinish, onQuit }: Props) => {
       return;
     }
     if (settings.soundEnabled) playTickSound();
-    const timer = window.setTimeout(() => setCountdown((c) => c - 1), 700);
+    const timer = window.setTimeout(
+      () => setCountdown((c) => c - 1),
+      COUNTDOWN_TICK_MS[pace]
+    );
     return () => window.clearTimeout(timer);
-  }, [countdown, phase, settings.soundEnabled]);
+  }, [countdown, pace, phase, settings.soundEnabled]);
 
   // タイム表示
   useEffect(() => {
@@ -272,7 +304,7 @@ export const MathQuiz = ({ settings, onFinish, onQuit }: Props) => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (phaseRef.current !== 'playing') return;
       if (/^[0-9]$/.test(event.key)) {
-        setInput((prev) => (prev.length >= 3 ? prev : prev + event.key));
+        appendDigit(event.key);
       } else if (event.key === 'Backspace') {
         setInput((prev) => prev.slice(0, -1));
       } else if (event.key === 'Enter') {
@@ -284,7 +316,7 @@ export const MathQuiz = ({ settings, onFinish, onQuit }: Props) => {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [submitAnswer]);
+  }, [appendDigit, submitAnswer]);
 
   useEffect(
     () => () => {
@@ -455,9 +487,7 @@ export const MathQuiz = ({ settings, onFinish, onQuit }: Props) => {
                 key={key}
                 type="button"
                 disabled={phase !== 'playing'}
-                onClick={() =>
-                  setInput((prev) => (prev.length >= 3 ? prev : prev + key))
-                }
+                onClick={() => appendDigit(key)}
                 className="rounded-2xl bg-sky-50 py-2 text-2xl font-black text-sky-700 shadow-sm active:scale-95 disabled:opacity-40"
               >
                 {key}
