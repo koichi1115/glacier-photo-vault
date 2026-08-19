@@ -3,6 +3,10 @@
  *
  * くりあがり無しの足し算は「各位の和が9以下」で作れる。
  * 引き算は、その足し算を逆向きにすることでくりさがり無しを保証する。
+ *
+ * ただし1年生の学習で大事な次の2つは、上のルールとは別に必ず出題する。
+ * - あわせて10（10の なかまづくり）: 6 + 4 = 10
+ * - こたえが0のひきざん: 7 - 7 = 0
  */
 
 export type Operation = 'add' | 'sub';
@@ -21,7 +25,7 @@ export const LEVELS: LevelConfig[] = [
   {
     id: 1,
     label: 'レベル1',
-    description: '1けた（こたえは 9まで）',
+    description: '1けた（こたえは 10まで）',
     maxTens: 0,
   },
   {
@@ -55,6 +59,7 @@ export interface Problem {
 }
 
 export type PatternId =
+  | 'add-make-ten'
   | 'add-answer-1digit'
   | 'add-answer-2digit'
   | 'sub-answer-1digit'
@@ -74,6 +79,11 @@ export interface PatternDef {
 }
 
 export const PATTERNS: PatternDef[] = [
+  {
+    id: 'add-make-ten',
+    label: 'あわせて 10 に なる たしざん',
+    hint: '「10の なかまづくり」。9と1、8と2… の ペアを おぼえると、くりあがりの じゅんびに なります。',
+  },
   {
     id: 'add-answer-1digit',
     label: 'たしざん（こたえが 1けた）',
@@ -111,8 +121,8 @@ export const PATTERNS: PatternDef[] = [
   },
   {
     id: 'answer-zero',
-    label: 'こたえが 0',
-    hint: 'おなじ かずを ひくと 0。まちがえやすい ポイントです。',
+    label: 'こたえが 0 に なる ひきざん',
+    hint: 'おなじ かずを ぜんぶ ひくと 0。「なくなる」イメージを ことばでも たしかめましょう。',
   },
   {
     id: 'plus-minus-one',
@@ -151,6 +161,17 @@ export const problemText = (problem: Problem): string =>
 /** 0 以上 max 以下の整数 */
 const randomInt = (max: number): number => Math.floor(Math.random() * (max + 1));
 
+/** そのレベルで あつかう いちばん大きい かず */
+const levelMaxValue = (level: LevelConfig): number => level.maxTens * 10 + 9;
+
+/**
+ * 1年生の だいじな パターンは、けた上がりの ルールとは べつに かならず出す。
+ * - あわせて10（10の なかまづくり）: 6+4 など
+ * - こたえが0の ひきざん: 7-7 など
+ */
+const MAKE_TEN_RATE = 0.15;
+const ZERO_ANSWER_RATE = 0.08;
+
 const pickPair = (level: LevelConfig): { a: number; b: number } => {
   // 一のくらい: 和が9以下（くりあがりなし）
   let ones1 = randomInt(9);
@@ -179,6 +200,7 @@ const detectPatterns = (
   const patterns: PatternId[] = [];
 
   if (operation === 'add') {
+    if (answer === 10) patterns.push('add-make-ten');
     patterns.push(answer >= 10 ? 'add-answer-2digit' : 'add-answer-1digit');
     if (left >= 5 || right >= 5) patterns.push('add-big-addend');
   } else {
@@ -238,21 +260,44 @@ export const generateProblem = (
 ): Problem => {
   const level = getLevel(levelId);
 
+  const isRepeat = (
+    left: number,
+    right: number,
+    operation: Operation
+  ): boolean =>
+    previous !== null &&
+    previous !== undefined &&
+    previous.left === left &&
+    previous.right === right &&
+    previous.operation === operation;
+
   for (let attempt = 0; attempt < 40; attempt += 1) {
     const operation = pickOperation(mode);
+
+    // あわせて10（1けた + 1けた = 10）
+    if (operation === 'add' && Math.random() < MAKE_TEN_RATE) {
+      const left = 1 + randomInt(8);
+      const right = 10 - left;
+      if (isRepeat(left, right, 'add')) continue;
+      return buildProblem(left, right, 'add', index);
+    }
+
+    // こたえが 0 の ひきざん（おなじ かずを ひく）
+    if (operation === 'sub' && Math.random() < ZERO_ANSWER_RATE) {
+      const value = 1 + randomInt(levelMaxValue(level) - 1);
+      if (isRepeat(value, value, 'sub')) continue;
+      return buildProblem(value, value, 'sub', index);
+    }
+
     const { a, b } = pickPair(level);
     const left = operation === 'add' ? a : a + b;
     const right = b;
 
+    // こたえが0の ひきざんは 上の とくべつパターンで だすので、
+    // ふつうの 生成では 出しすぎないようにする
+    if (operation === 'sub' && a === 0 && Math.random() > 0.1) continue;
     if (isBoring(left, right)) continue;
-    if (
-      previous &&
-      previous.left === left &&
-      previous.right === right &&
-      previous.operation === operation
-    ) {
-      continue;
-    }
+    if (isRepeat(left, right, operation)) continue;
 
     return buildProblem(left, right, operation, index);
   }

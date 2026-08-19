@@ -192,8 +192,8 @@ export const MathPractice = () => {
             けいさん れんしゅう
           </h1>
           <p className="mt-1 text-sm font-bold text-slate-500">
-            くりあがり・くりさがりの ない たしざんと ひきざんを、
-            こえで こたえよう！
+            くりあがり・くりさがりの ない たしざんと ひきざんを こえで
+            こたえよう！「あわせて 10」と「こたえが 0 の ひきざん」も でるよ。
           </p>
         </header>
 
