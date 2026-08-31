@@ -6,7 +6,7 @@ import Stripe from 'stripe';
 const router = express.Router();
 
 /**
- * POST /api/webhook/stripe
+ * POST /api/webhooks/stripe (and /api/webhook/stripe)
  * Handle Stripe webhook events
  * Note: This endpoint must use raw body parser (express.raw)
  */
