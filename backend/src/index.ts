@@ -13,7 +13,7 @@ import uploadRoutes from './routes/uploadRoutes';
 import credentialRoutes from './routes/credentialRoutes';
 import authRoutes from './routes/authRoutes';
 import billingRoutes from './routes/billingRoutes';
-import webhookRoutes from './routes/webhookRoutes';
+import { mountStripeWebhook } from './routes/mountStripeWebhook';
 import { initDb } from './db';
 import deviceRoutes from './routes/deviceRoutes';
 import { scheduleCleanupJob } from './jobs/cleanupJob';
@@ -89,6 +89,9 @@ const generalLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Stripe webhook は raw body が必要なので JSON / 一般レート制限より前
+mountStripeWebhook(app);
+
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15分
   max: 10, // 15分間に最大10リクエスト（認証エンドポイント用）
@@ -162,8 +165,6 @@ app.use('/api/devices', generalLimiter, deviceRoutes);
 // 課金ルート
 app.use('/api/billing', generalLimiter, billingRoutes);
 
-// Stripeウェブフック（express.jsonより前に設定する必要があるため、webhookRoutes内でraw parserを使用）
-app.use('/api/webhook', webhookRoutes);
 
 // ============================================================
 // サーバー起動
